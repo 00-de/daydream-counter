@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DayDreamプラス 題目カウンター</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff66cc">
+
+<style>
+body{
+font-family:sans-serif;
+margin:0;
+padding:20px;
+background:linear-gradient(135deg,#ffb6f9,#b5d7ff,#ffe59e);
+min-height:100vh;
+}
+.card{
+background:white;
+padding:16px;
+border-radius:20px;
+margin-bottom:14px;
+box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+.title{
+font-size:28px;
+font-weight:bold;
+margin-bottom:12px;
+}
+.grid{
+display:grid;
+gap:10px;
+}
+input,textarea{
+width:100%;
+padding:10px;
+border-radius:10px;
+border:1px solid #ccc;
+box-sizing:border-box;
+}
+button{
+padding:12px;
+border:none;
+border-radius:12px;
+font-weight:bold;
+margin:4px;
+cursor:pointer;
+}
+.start{background:#00c853;color:white;}
+.reset1{background:#ffd54f;}
+.reset2{background:#ff9800;color:white;}
+.reset3{background:#ef5350;color:white;}
+.bar{
+height:24px;
+background:#ddd;
+border-radius:999px;
+overflow:hidden;
+}
+.fill{
+height:100%;
+background:linear-gradient(90deg,#00e676,#00b0ff);
+width:0%;
+transition:0.5s;
+}
+.event{
+background:#fff3cd;
+padding:14px;
+border-radius:18px;
+margin-top:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="title">🌈 DayDreamプラス 題目カウンター</div>
+
+<div class="card grid">
+<div>⏰ 現在時刻: <span id="clock"></span></div>
+<div>🚀 開始時刻: <span id="startTime">未開始</span></div>
+<div>📅 1日総数: <span id="daily">0</span></div>
+<div>🗓️ 月総数: <span id="monthly">0</span></div>
+<div>🏆 総数: <span id="total">0</span></div>
+</div>
+
+<div class="card">
+<label>⚡ 1分間唱題数</label>
+<input type="number" id="perMinute" value="60">
+
+<label>🎯 1時間目標</label>
+<input type="number" id="goal" value="3000">
+
+<div style="margin-top:10px;">📊 達成率 <span id="percent">0</span>%</div>
+<div class="bar">
+<div class="fill" id="fill"></div>
+</div>
+</div>
+
+<div class="card">
+<button class="start" id="toggleBtn">▶ 自動開始</button>
+<button class="reset1" onclick="resetDay()">日リセット</button>
+<button class="reset2" onclick="resetMonth()">月リセット</button>
+<button class="reset3" onclick="resetTotal()">総リセット</button>
+</div>
+
+<div class="card">
+<div>🙏 御祈念入力（200文字以内）</div>
+<textarea maxlength="200" id="wish"></textarea>
+</div>
+
+<div id="events"></div>
+
+<script>
+const STORAGE="daydream_full_counter";
+
+let state = JSON.parse(localStorage.getItem(STORAGE)) || {
+daily:0,
+monthly:0,
+total:0,
+hour:0,
+start:null,
+wish:""
+};
+
+let running=false;
+let timer=null;
+
+const achievements = [
+{n:10000,msg:"🎆 1万遍達成！カラフル演出！"},
+{n:50000,msg:"🥁 大地『最高の勢いだ！』"},
+{n:100000,msg:"🎤 結衣『ここからもっと輝こう！』"},
+{n:200000,msg:"🎸 蓮『集中力すごい！』"},
+{n:400000,msg:"🎀 葵『みんなで前へ進もう！』"},
+{n:500000,msg:"🎹 悠真『本当にすごいよ！』"},
+{n:700000,msg:"🌈 DayDreamプラス全員祝福！"},
+{n:800000,msg:"✨ 月城美琴『大きな希望だね！』"},
+{n:900000,msg:"💫 美琴＆結衣『響き合ってる！』"},
+{n:1000000,msg:"🏆 100万遍達成！！伝説完成！！"}
+];
+
+function save(){
+state.wish=document.getElementById("wish").value;
+localStorage.setItem(STORAGE,JSON.stringify(state));
+}
+
+function updateUI(){
+document.getElementById("daily").innerText=state.daily;
+document.getElementById("monthly").innerText=state.monthly;
+document.getElementById("total").innerText=state.total;
+
+if(state.start){
+document.getElementById("startTime").innerText=
+new Date(state.start).toLocaleString();
+}
+
+const goal=Number(document.getElementById("goal").value||1);
+const percent=Math.min(100,Math.floor(state.hour/goal*100));
+
+document.getElementById("percent").innerText=percent;
+document.getElementById("fill").style.width=percent+"%";
+
+const events=document.getElementById("events");
+events.innerHTML="";
+
+achievements.forEach(a=>{
+if(state.total>=a.n){
+events.innerHTML += `
+<div class="event">
+${a.msg}
+<div>📸 画像エリア（後で画像追加OK）</div>
+</div>`;
+}
+});
+
+save();
+}
+
+function tick(){
+const perMinute=Number(document.getElementById("perMinute").value||60);
+const add=Math.max(1,Math.floor(perMinute/60));
+
+state.daily += add;
+state.monthly += add;
+state.total += add;
+state.hour += add;
+
+updateUI();
+}
+
+document.getElementById("toggleBtn").onclick=()=>{
+running=!running;
+
+if(running){
+if(!state.start) state.start=Date.now();
+
+timer=setInterval(tick,1000);
+
+document.getElementById("toggleBtn").innerText="⏹ 停止";
+
+if('wakeLock' in navigator){
+navigator.wakeLock.request('screen').catch(()=>{});
+}
+
+}else{
+clearInterval(timer);
+document.getElementById("toggleBtn").innerText="▶ 自動開始";
+}
+};
+
+function resetDay(){state.daily=0;updateUI();}
+function resetMonth(){state.monthly=0;updateUI();}
+function resetTotal(){state.total=0;updateUI();}
+
+setInterval(()=>{
+document.getElementById("clock").innerText=
+new Date().toLocaleString('ja-JP');
+},1000);
+
+document.getElementById("wish").value=state.wish || "";
+
+updateUI();
+
+if('serviceWorker' in navigator){
+navigator.serviceWorker.register('./sw.js');
+}
+</script>
+
+</body>
+</html>

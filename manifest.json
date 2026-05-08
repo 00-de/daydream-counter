@@ -1,0 +1,10 @@
+
+{
+"name":"DayDreamプラス 題目カウンター",
+"short_name":"DayDream",
+"start_url":"./index.html",
+"display":"standalone",
+"background_color":"#ffffff",
+"theme_color":"#ff66cc",
+"icons":[]
+}
