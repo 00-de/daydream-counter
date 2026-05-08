@@ -66,6 +66,39 @@ button {
 <button onclick="resetMonth()">月リセット</button>
 <button onclick="resetTotal()">総リセット</button>
 </div>
+function savePrayer(){
+
+const prayer =
+document.getElementById('prayer').value;
+
+localStorage.setItem(
+'daydream_prayer',
+prayer
+);
+
+document.getElementById(
+'saveMessage'
+).innerText =
+'✨御祈念を保存しました';
+
+}
+
+window.addEventListener('load',()=>{
+
+const savedPrayer =
+localStorage.getItem(
+'daydream_prayer'
+);
+
+if(savedPrayer){
+
+document.getElementById(
+'prayer'
+).value = savedPrayer;
+
+}
+
+});
 
 <script>
 const STORAGE = 'daydream_counter';
