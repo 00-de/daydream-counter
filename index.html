@@ -2,12 +2,20 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<title>DayDreamプラス 題目カウンター DX</title>
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
 
-<meta name="theme-color" content="#ff66cc">
+<title>
+DayDreamプラス 題目カウンター DX
+</title>
+
+<meta
+name="theme-color"
+content="#ff66cc"
+>
 
 <style>
 
@@ -15,12 +23,14 @@ body{
   margin:0;
   padding:20px;
   font-family:sans-serif;
+
   background:linear-gradient(
     135deg,
     #ffb6f9,
     #b5d7ff,
     #ffe59e
   );
+
   min-height:100vh;
   color:#222;
 }
@@ -36,7 +46,9 @@ h1{
   border-radius:24px;
   padding:18px;
   margin-bottom:18px;
-  box-shadow:0 6px 14px rgba(0,0,0,0.15);
+
+  box-shadow:
+  0 6px 14px rgba(0,0,0,0.15);
 }
 
 button{
@@ -44,8 +56,10 @@ button{
   padding:14px 18px;
   border-radius:16px;
   margin:6px;
+
   font-size:16px;
   font-weight:bold;
+
   cursor:pointer;
 }
 
@@ -68,31 +82,40 @@ input,
 textarea{
   width:100%;
   padding:12px;
+
   border-radius:14px;
   border:1px solid #ccc;
+
   margin-top:8px;
   margin-bottom:14px;
+
   font-size:16px;
+
   box-sizing:border-box;
 }
 
 .bar{
   height:28px;
   background:#ddd;
+
   border-radius:999px;
+
   overflow:hidden;
+
   margin-top:10px;
 }
 
 .fill{
   height:100%;
   width:0%;
+
   background:linear-gradient(
     90deg,
     #00e676,
     #00b0ff,
     #ff00aa
   );
+
   transition:0.5s;
 }
 
@@ -104,10 +127,14 @@ textarea{
 .achievement{
   margin-top:12px;
   padding:14px;
+
   border-radius:16px;
+
   background:#fff3cd;
+
   font-weight:bold;
   font-size:18px;
+
   animation:fadein 1s;
 }
 
@@ -149,7 +176,9 @@ textarea{
 
 <body>
 
-<h1>🌈 DayDreamプラス 題目カウンター DX</h1>
+<h1>
+🌈 DayDreamプラス 題目カウンター DX
+</h1>
 
 <div class="card">
 
@@ -162,7 +191,9 @@ textarea{
 
 <div>
 🚀 開始時刻:
-<span id="startTime">未開始</span>
+<span id="startTime">
+未開始
+</span>
 </div>
 
 <br>
@@ -187,17 +218,27 @@ textarea{
 </div>
 
 <div class="status">
+
 状態:
-<span id="statusText" class="stop">
+
+<span
+id="statusText"
+class="stop"
+>
+
 停止中
+
 </span>
+
 </div>
 
 </div>
 
 <div class="card">
 
-<label>⚡ 1分間唱題数</label>
+<label>
+⚡ 1分間唱題数
+</label>
 
 <input
 type="number"
@@ -205,7 +246,9 @@ id="perMinute"
 value="60"
 >
 
-<label>🎯 1時間唱題目標</label>
+<label>
+🎯 1日唱題目標
+</label>
 
 <input
 type="number"
@@ -221,7 +264,12 @@ value="3000"
 </div>
 
 <div class="bar">
-<div class="fill" id="fill"></div>
+
+<div
+class="fill"
+id="fill"
+></div>
+
 </div>
 
 </div>
@@ -269,7 +317,9 @@ onclick="resetTotal()"
 
 <div class="card">
 
-<h2>🙏 御祈念入力</h2>
+<h2>
+🙏 御祈念入力
+</h2>
 
 <textarea
 id="prayer"
@@ -293,7 +343,9 @@ onclick="savePrayer()"
 
 <div class="card">
 
-<h2>🌈 DayDream達成演出</h2>
+<h2>
+🌈 DayDream達成演出
+</h2>
 
 <div id="achievementArea"></div>
 
@@ -301,14 +353,17 @@ onclick="savePrayer()"
 
 <script>
 
-const STORAGE = 'daydream_dx_counter';
+const STORAGE =
+'daydream_dx_counter';
 
 let state = JSON.parse(
   localStorage.getItem(STORAGE)
 ) || {
 
   daily:0,
+
   monthly:0,
+
   total:0,
 
   start:null,
@@ -331,48 +386,57 @@ function save(){
 
 function getCurrentCounts(){
 
-  if(!state.running || !state.start){
+  if(
+    !state.running ||
+    !state.start
+  ){
 
-    return {
+    return{
 
       daily:state.daily,
-      monthly:state.monthly,
-      total:state.total,
-      session:state.sessionCount || 0
 
+      monthly:state.monthly,
+
+      total:state.total,
+
+      session:
+      state.sessionCount || 0
     };
 
   }
 
   const now = Date.now();
 
-  // スリープ復帰対応
-  const elapsedSeconds = Math.max(
-    0,
-    (now - state.start) / 1000
-  );
+  const elapsedSeconds =
+    Math.max(
+      0,
+      (now - state.start) / 1000
+    );
 
   const add =
     elapsedSeconds *
     (state.perMinute / 60);
 
-  return {
+  return{
 
-    daily:state.daily + add,
+    daily:
+    state.daily + add,
 
-    monthly:state.monthly + add,
+    monthly:
+    state.monthly + add,
 
-    total:state.total + add,
+    total:
+    state.total + add,
 
     session:add
-
   };
 
 }
 
 function updateUI(){
 
-  const counts = getCurrentCounts();
+  const counts =
+    getCurrentCounts();
 
   document.getElementById(
     'daily'
@@ -394,51 +458,60 @@ function updateUI(){
     document.getElementById(
       'startTime'
     ).innerText =
+
       new Date(state.start)
       .toLocaleString('ja-JP');
-
   }
 
+  // 1日達成率
   const goal = Number(
+
     document.getElementById(
       'goal'
     ).value || 1
+
   );
 
-  const currentSessionCount =
-    Math.floor(counts.session);
+  const currentDailyCount =
+    Math.floor(counts.daily);
 
   const percent = Math.min(
+
     100,
+
     Math.floor(
-      (currentSessionCount / goal)
+      (currentDailyCount / goal)
       * 100
     )
+
   );
 
   document.getElementById(
     'percent'
-  ).innerText = percent;
+  ).innerText =
+    percent;
 
   document.getElementById(
     'fill'
   ).style.width =
     percent + '%';
 
-  // 達成率カラー変化
+  // 色変化
   if(percent >= 100){
 
     document.getElementById(
       'fill'
     ).style.background =
-      'linear-gradient(90deg,#ffd700,#ff9800,#ff1744)';
+
+    'linear-gradient(90deg,#ffd700,#ff9800,#ff1744)';
 
   }else{
 
     document.getElementById(
       'fill'
     ).style.background =
-      'linear-gradient(90deg,#00e676,#00b0ff,#ff00aa)';
+
+    'linear-gradient(90deg,#00e676,#00b0ff,#ff00aa)';
   }
 
   checkAchievements(
@@ -458,9 +531,11 @@ function toggleCounter(){
     state.sessionCount = 0;
 
     state.perMinute = Number(
+
       document.getElementById(
         'perMinute'
       ).value || 60
+
     );
 
     document.getElementById(
@@ -511,7 +586,6 @@ function toggleCounter(){
       'statusText'
     ).className =
       'stop';
-
   }
 
   save();
@@ -553,6 +627,7 @@ function resetTotal(){
 function savePrayer(){
 
   const prayer =
+
     document.getElementById(
       'prayer'
     ).value;
@@ -565,6 +640,7 @@ function savePrayer(){
   document.getElementById(
     'saveMessage'
   ).innerHTML =
+
     '✨御祈念を保存しました✨';
 
 }
@@ -585,7 +661,6 @@ function checkAchievements(total){
     🎆 1万遍達成！
     </div>
     `;
-
   }
 
   if(total >= 50000){
@@ -596,7 +671,6 @@ function checkAchievements(total){
     「最高の勢いだ！」
     </div>
     `;
-
   }
 
   if(total >= 100000){
@@ -607,7 +681,6 @@ function checkAchievements(total){
     「ここからもっと輝こう！」
     </div>
     `;
-
   }
 
   if(total >= 200000){
@@ -618,7 +691,6 @@ function checkAchievements(total){
     「最高の流れ来てる！」
     </div>
     `;
-
   }
 
   if(total >= 400000){
@@ -629,7 +701,6 @@ function checkAchievements(total){
     「夢へ進もう！」
     </div>
     `;
-
   }
 
   if(total >= 500000){
@@ -640,7 +711,6 @@ function checkAchievements(total){
     「本当にすごい！」
     </div>
     `;
-
   }
 
   if(total >= 700000){
@@ -651,7 +721,6 @@ function checkAchievements(total){
     「奇跡を超えていこう！」
     </div>
     `;
-
   }
 
   if(total >= 800000){
@@ -662,7 +731,6 @@ function checkAchievements(total){
     「未来は輝いてる！」
     </div>
     `;
-
   }
 
   if(total >= 900000){
@@ -673,7 +741,6 @@ function checkAchievements(total){
     「一緒に夢を叶えよう！」
     </div>
     `;
-
   }
 
   if(total >= 1000000){
@@ -683,7 +750,6 @@ function checkAchievements(total){
     🏆 100万遍達成！！
     </div>
     `;
-
   }
 
   area.innerHTML = html;
@@ -691,10 +757,13 @@ function checkAchievements(total){
 }
 
 window.addEventListener(
+
   'load',
+
   ()=>{
 
     const savedPrayer =
+
       localStorage.getItem(
         'daydream_prayer'
       );
@@ -705,7 +774,6 @@ window.addEventListener(
         'prayer'
       ).value =
         savedPrayer;
-
     }
 
     if(state.running){
@@ -724,12 +792,12 @@ window.addEventListener(
         'statusText'
       ).className =
         'running';
-
     }
 
     updateUI();
 
   }
+
 );
 
 setInterval(()=>{
@@ -737,6 +805,7 @@ setInterval(()=>{
   document.getElementById(
     'clock'
   ).innerText =
+
     new Date()
     .toLocaleString('ja-JP');
 
