@@ -12,8 +12,6 @@ viewport-fit=cover">
 DayDreamプラス 題目カウンター DX
 </title>
 
-<link rel="manifest" href="manifest.json">
-
 <meta name="theme-color"
 content="#ff66cc">
 
@@ -309,8 +307,7 @@ onclick="savePrayer()"
 
 <script>
 
-const STORAGE =
-'daydream_dx_counter';
+const STORAGE='daydream_dx_counter';
 
 let state =
 JSON.parse(
@@ -321,13 +318,11 @@ localStorage.getItem(STORAGE)
 daily:0,
 monthly:0,
 total:0,
-hour:0,
 start:null,
-auto:false
+running:false,
+perMinute:60
 
 };
-
-let timer=null;
 
 function save(){
 
@@ -338,22 +333,61 @@ JSON.stringify(state)
 
 }
 
+function getCurrentCounts(){
+
+if(!state.running || !state.start){
+
+return {
+daily:state.daily,
+monthly:state.monthly,
+total:state.total
+};
+
+}
+
+const now = Date.now();
+
+const elapsedSeconds =
+(now - state.start) / 1000;
+
+const add =
+elapsedSeconds *
+(state.perMinute / 60);
+
+return {
+
+daily:
+state.daily + add,
+
+monthly:
+state.monthly + add,
+
+total:
+state.total + add
+
+};
+
+}
+
 function updateUI(){
+
+const counts =
+getCurrentCounts();
 
 document.getElementById(
 'daily'
 ).innerText =
-Math.floor(state.daily);
+Math.floor(counts.daily);
 
 document.getElementById(
 'monthly'
 ).innerText =
-Math.floor(state.monthly);
+Math.floor(counts.monthly);
 
 document.getElementById(
 'total'
 ).innerText =
-Math.floor(state.total);
+Math.floor(counts.total);
 
 if(state.start){
 
@@ -372,11 +406,22 @@ document.getElementById(
 ).value || 1
 );
 
+const elapsedHours =
+state.start
+? (Date.now()-state.start)
+/ 3600000
+: 0;
+
+const currentHourCount =
+elapsedHours *
+state.perMinute;
+
 const percent =
 Math.min(
 100,
 Math.floor(
-(state.hour/goal)*100
+(currentHourCount / goal)
+* 100
 )
 );
 
@@ -390,49 +435,25 @@ document.getElementById(
 ).style.width =
 percent + '%';
 
-save();
-
-checkAchievements();
-
-}
-
-function tick(){
-
-const perMinute =
-Number(
-document.getElementById(
-'perMinute'
-).value || 60
+checkAchievements(
+counts.total
 );
-
-const add =
-perMinute / 60;
-
-state.daily += add;
-state.monthly += add;
-state.total += add;
-state.hour += add;
-
-updateUI();
 
 }
 
 function toggleCounter(){
 
-state.auto=!state.auto;
+if(!state.running){
 
-if(state.auto){
+state.running = true;
 
-if(!state.start){
+state.start = Date.now();
 
-state.start=
-Date.now();
-
-}
-
-timer=setInterval(
-tick,
-1000
+state.perMinute =
+Number(
+document.getElementById(
+'perMinute'
+).value || 60
 );
 
 document.getElementById(
@@ -442,7 +463,19 @@ document.getElementById(
 
 }else{
 
-clearInterval(timer);
+const counts =
+getCurrentCounts();
+
+state.daily =
+counts.daily;
+
+state.monthly =
+counts.monthly;
+
+state.total =
+counts.total;
+
+state.running = false;
 
 document.getElementById(
 'startButton'
@@ -453,12 +486,15 @@ document.getElementById(
 
 save();
 
+updateUI();
+
 }
 
 function resetDay(){
 
-state.daily=0;
-state.hour=0;
+state.daily = 0;
+
+save();
 
 updateUI();
 
@@ -466,8 +502,9 @@ updateUI();
 
 function resetMonth(){
 
-state.monthly=0;
-state.hour=0;
+state.monthly = 0;
+
+save();
 
 updateUI();
 
@@ -475,8 +512,9 @@ updateUI();
 
 function resetTotal(){
 
-state.total=0;
-state.hour=0;
+state.total = 0;
+
+save();
 
 updateUI();
 
@@ -501,7 +539,7 @@ document.getElementById(
 
 }
 
-function checkAchievements(){
+function checkAchievements(total){
 
 const area =
 document.getElementById(
@@ -510,7 +548,7 @@ document.getElementById(
 
 let html='';
 
-if(state.total >= 10000){
+if(total >= 10000){
 
 html += `
 <div class="achievement big">
@@ -520,7 +558,7 @@ html += `
 
 }
 
-if(state.total >= 50000){
+if(total >= 50000){
 
 html += `
 <div class="achievement">
@@ -531,7 +569,7 @@ html += `
 
 }
 
-if(state.total >= 100000){
+if(total >= 100000){
 
 html += `
 <div class="achievement">
@@ -542,7 +580,7 @@ html += `
 
 }
 
-if(state.total >= 200000){
+if(total >= 200000){
 
 html += `
 <div class="achievement">
@@ -553,7 +591,7 @@ html += `
 
 }
 
-if(state.total >= 400000){
+if(total >= 400000){
 
 html += `
 <div class="achievement">
@@ -564,7 +602,7 @@ html += `
 
 }
 
-if(state.total >= 500000){
+if(total >= 500000){
 
 html += `
 <div class="achievement">
@@ -575,7 +613,7 @@ html += `
 
 }
 
-if(state.total >= 700000){
+if(total >= 700000){
 
 html += `
 <div class="achievement">
@@ -586,7 +624,7 @@ html += `
 
 }
 
-if(state.total >= 800000){
+if(total >= 800000){
 
 html += `
 <div class="achievement">
@@ -597,7 +635,7 @@ html += `
 
 }
 
-if(state.total >= 900000){
+if(total >= 900000){
 
 html += `
 <div class="achievement">
@@ -608,12 +646,11 @@ html += `
 
 }
 
-if(state.total >= 1000000){
+if(total >= 1000000){
 
 html += `
 <div class="achievement big">
 🏆 100万遍達成！！
-DayDreamプラス完全制覇！！
 </div>
 `;
 
@@ -641,11 +678,7 @@ savedPrayer;
 
 }
 
-if(state.auto){
-
-toggleCounter();
-
-}
+updateUI();
 
 }
 );
@@ -658,56 +691,9 @@ document.getElementById(
 new Date()
 .toLocaleString('ja-JP');
 
-},1000);
-
-// iPhoneスリープ防止強化
-
-let wakeLock = null;
-
-async function requestWakeLock(){
-
-try{
-
-if('wakeLock' in navigator){
-
-wakeLock =
-await navigator
-.wakeLock
-.request('screen');
-
-}
-
-}catch(err){
-
-console.log(err);
-
-}
-
-}
-
-document.addEventListener(
-'visibilitychange',
-async()=>{
-
-if(
-wakeLock !== null &&
-document.visibilityState ===
-'visible'
-){
-
-wakeLock =
-await navigator
-.wakeLock
-.request('screen');
-
-}
-
-}
-);
-
-requestWakeLock();
-
 updateUI();
+
+},1000);
 
 </script>
 
