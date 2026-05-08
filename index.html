@@ -1,229 +1,231 @@
+import { useEffect, useMemo, useState } from "react";
 
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>DayDreamプラス 題目カウンター</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ff66cc">
+const STORAGE_KEY = "daydream_counter_v1";
 
-<style>
-body{
-font-family:sans-serif;
-margin:0;
-padding:20px;
-background:linear-gradient(135deg,#ffb6f9,#b5d7ff,#ffe59e);
-min-height:100vh;
-}
-.card{
-background:white;
-padding:16px;
-border-radius:20px;
-margin-bottom:14px;
-box-shadow:0 4px 10px rgba(0,0,0,0.15);
-}
-.title{
-font-size:28px;
-font-weight:bold;
-margin-bottom:12px;
-}
-.grid{
-display:grid;
-gap:10px;
-}
-input,textarea{
-width:100%;
-padding:10px;
-border-radius:10px;
-border:1px solid #ccc;
-box-sizing:border-box;
-}
-button{
-padding:12px;
-border:none;
-border-radius:12px;
-font-weight:bold;
-margin:4px;
-cursor:pointer;
-}
-.start{background:#00c853;color:white;}
-.reset1{background:#ffd54f;}
-.reset2{background:#ff9800;color:white;}
-.reset3{background:#ef5350;color:white;}
-.bar{
-height:24px;
-background:#ddd;
-border-radius:999px;
-overflow:hidden;
-}
-.fill{
-height:100%;
-background:linear-gradient(90deg,#00e676,#00b0ff);
-width:0%;
-transition:0.5s;
-}
-.event{
-background:#fff3cd;
-padding:14px;
-border-radius:18px;
-margin-top:10px;
-}
-</style>
-</head>
-<body>
-
-<div class="title">🌈 DayDreamプラス 題目カウンター</div>
-
-<div class="card grid">
-<div>⏰ 現在時刻: <span id="clock"></span></div>
-<div>🚀 開始時刻: <span id="startTime">未開始</span></div>
-<div>📅 1日総数: <span id="daily">0</span></div>
-<div>🗓️ 月総数: <span id="monthly">0</span></div>
-<div>🏆 総数: <span id="total">0</span></div>
-</div>
-
-<div class="card">
-<label>⚡ 1分間唱題数</label>
-<input type="number" id="perMinute" value="60">
-
-<label>🎯 1時間目標</label>
-<input type="number" id="goal" value="3000">
-
-<div style="margin-top:10px;">📊 達成率 <span id="percent">0</span>%</div>
-<div class="bar">
-<div class="fill" id="fill"></div>
-</div>
-</div>
-
-<div class="card">
-<button class="start" id="toggleBtn">▶ 自動開始</button>
-<button class="reset1" onclick="resetDay()">日リセット</button>
-<button class="reset2" onclick="resetMonth()">月リセット</button>
-<button class="reset3" onclick="resetTotal()">総リセット</button>
-</div>
-
-<div class="card">
-<div>🙏 御祈念入力（200文字以内）</div>
-<textarea maxlength="200" id="wish"></textarea>
-</div>
-
-<div id="events"></div>
-
-<script>
-const STORAGE="daydream_full_counter";
-
-let state = JSON.parse(localStorage.getItem(STORAGE)) || {
-daily:0,
-monthly:0,
-total:0,
-hour:0,
-start:null,
-wish:""
+const initialState = {
+  startTime: null,
+  daily: 0,
+  monthly: 0,
+  total: 0,
+  perMinute: 60,
+  hourlyGoal: 3000,
+  progressThisHour: 0,
+  lastResetDay: null,
+  lastResetMonth: null,
+  intention: "",
 };
 
-let running=false;
-let timer=null;
-
-const achievements = [
-{n:10000,msg:"🎆 1万遍達成！カラフル演出！"},
-{n:50000,msg:"🥁 大地『最高の勢いだ！』"},
-{n:100000,msg:"🎤 結衣『ここからもっと輝こう！』"},
-{n:200000,msg:"🎸 蓮『集中力すごい！』"},
-{n:400000,msg:"🎀 葵『みんなで前へ進もう！』"},
-{n:500000,msg:"🎹 悠真『本当にすごいよ！』"},
-{n:700000,msg:"🌈 DayDreamプラス全員祝福！"},
-{n:800000,msg:"✨ 月城美琴『大きな希望だね！』"},
-{n:900000,msg:"💫 美琴＆結衣『響き合ってる！』"},
-{n:1000000,msg:"🏆 100万遍達成！！伝説完成！！"}
-];
-
-function save(){
-state.wish=document.getElementById("wish").value;
-localStorage.setItem(STORAGE,JSON.stringify(state));
-}
-
-function updateUI(){
-document.getElementById("daily").innerText=state.daily;
-document.getElementById("monthly").innerText=state.monthly;
-document.getElementById("total").innerText=state.total;
-
-if(state.start){
-document.getElementById("startTime").innerText=
-new Date(state.start).toLocaleString();
-}
-
-const goal=Number(document.getElementById("goal").value||1);
-const percent=Math.min(100,Math.floor(state.hour/goal*100));
-
-document.getElementById("percent").innerText=percent;
-document.getElementById("fill").style.width=percent+"%";
-
-const events=document.getElementById("events");
-events.innerHTML="";
-
-achievements.forEach(a=>{
-if(state.total>=a.n){
-events.innerHTML += `
-<div class="event">
-${a.msg}
-<div>📸 画像エリア（後で画像追加OK）</div>
-</div>`;
-}
-});
-
-save();
-}
-
-function tick(){
-const perMinute=Number(document.getElementById("perMinute").value||60);
-const add=Math.max(1,Math.floor(perMinute/60));
-
-state.daily += add;
-state.monthly += add;
-state.total += add;
-state.hour += add;
-
-updateUI();
-}
-
-document.getElementById("toggleBtn").onclick=()=>{
-running=!running;
-
-if(running){
-if(!state.start) state.start=Date.now();
-
-timer=setInterval(tick,1000);
-
-document.getElementById("toggleBtn").innerText="⏹ 停止";
-
-if('wakeLock' in navigator){
-navigator.wakeLock.request('screen').catch(()=>{});
-}
-
-}else{
-clearInterval(timer);
-document.getElementById("toggleBtn").innerText="▶ 自動開始";
-}
+const members = {
+  10000: { name: "カラフルイラスト", msg: "10,000遍達成！輝いてるよ！" },
+  50000: { name: "大地", msg: "5万遍突破！勢いそのまま行こう！" },
+  100000: { name: "結衣", msg: "10万遍すごい！ここからさらに加速！" },
+  200000: { name: "蓮", msg: "20万遍到達！集中力が極まってるね" },
+  400000: { name: "葵", msg: "40万遍！エネルギー爆発中！" },
+  500000: { name: "悠真", msg: "50万遍！リーダーも驚く進化！" },
+  700000: { name: "全員", msg: "70万遍！DayDreamプラス全開！" },
+  800000: { name: "月城美琴", msg: "80万遍！美琴から祝福メッセージ！" },
+  900000: { name: "美琴×結衣", msg: "90万遍！二人の共鳴が響く！" },
+  1000000: { name: "フルメンバー+美琴", msg: "100万遍達成！伝説になった瞬間！" },
 };
 
-function resetDay(){state.daily=0;updateUI();}
-function resetMonth(){state.monthly=0;updateUI();}
-function resetTotal(){state.total=0;updateUI();}
-
-setInterval(()=>{
-document.getElementById("clock").innerText=
-new Date().toLocaleString('ja-JP');
-},1000);
-
-document.getElementById("wish").value=state.wish || "";
-
-updateUI();
-
-if('serviceWorker' in navigator){
-navigator.serviceWorker.register('./sw.js');
+function getToday() {
+  return new Date().toDateString();
 }
-</script>
 
-</body>
-</html>
+function getMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}`;
+}
+
+export default function App() {
+  const [state, setState] = useState(initialState);
+  const [running, setRunning] = useState(false);
+
+  // =============================
+  // 🌈 PWA対応（インストール可能化）
+  // =============================
+
+  useEffect(() => {
+    // Service Worker登録
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log('SW registered'))
+        .catch(() => console.log('SW failed'));
+    }
+  }, []);
+
+  // Wake Lock（画面スリープ防止）
+  useEffect(() => {
+    let wakeLock = null;
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch {}
+    };
+    if (running) requestWakeLock();
+    return () => {
+      if (wakeLock) wakeLock.release();
+    };
+  }, [running]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) setState(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, [state]);
+
+  useEffect(() => {
+    let timer;
+    if (running) {
+      timer = setInterval(() => {
+        setState((prev) => {
+          const today = getToday();
+          const month = getMonth();
+
+          let daily = prev.daily;
+          let monthly = prev.monthly;
+
+          if (prev.lastResetDay !== today) daily = 0;
+          if (prev.lastResetMonth !== month) monthly = 0;
+
+          const add = prev.perMinute / 60;
+
+          return {
+            ...prev,
+            startTime: prev.startTime || Date.now(),
+            total: prev.total + add,
+            daily: daily + add,
+            monthly: monthly + add,
+            progressThisHour: prev.progressThisHour + add,
+            lastResetDay: today,
+            lastResetMonth: month,
+          };
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [running]);
+
+  const percent = useMemo(() => {
+    return Math.min(100, Math.round((state.progressThisHour / state.hourlyGoal) * 100));
+  }, [state.progressThisHour, state.hourlyGoal]);
+
+  const reset = (type) => {
+    setState((p) => {
+      if (type === "day") {
+        return { ...p, daily: 0, progressThisHour: 0 };
+      }
+
+      if (type === "month") {
+        return { ...p, monthly: 0, progressThisHour: 0 };
+      }
+
+      if (type === "total") {
+        return { ...p, total: 0, progressThisHour: 0 };
+      }
+
+      return p;
+    });
+  };
+
+  return (
+    <div className="min-h-screen p-6 bg-gradient-to-br from-pink-200 via-purple-200 to-blue-200">
+      <h1 className="text-2xl font-bold mb-4">🌈 DayDreamプラス 題目カウンター（PWA対応）</h1>
+
+      <div className="bg-white p-4 rounded-2xl shadow">
+        <div>⏰ 現在時刻: {new Date().toLocaleString()}</div>
+        <div>🚀 開始時刻: {state.startTime ? new Date(state.startTime).toLocaleString() : "未開始"}</div>
+        <div>📅 1日: {Math.floor(state.daily)}</div>
+        <div>🗓 月: {Math.floor(state.monthly)}</div>
+        <div>🏆 総数: {Math.floor(state.total)}</div>
+      </div>
+
+      <div className="mt-4 bg-white p-4 rounded-2xl shadow">
+        <label>⚡ 1分間唱題数</label>
+        <input
+          type="number"
+          value={state.perMinute}
+          onChange={(e) => setState({ ...state, perMinute: Number(e.target.value) })}
+          className="border p-2 w-full rounded"
+        />
+
+        <label className="mt-2 block">🎯 1時間目標</label>
+        <input
+          type="number"
+          value={state.hourlyGoal}
+          onChange={(e) => setState({ ...state, hourlyGoal: Number(e.target.value) })}
+          className="border p-2 w-full rounded"
+        />
+
+        <div className="mt-2">📊 {percent}%</div>
+        <div className="w-full bg-gray-200 h-4 rounded">
+          <div className="h-4 bg-green-400 rounded" style={{ width: percent + "%" }} />
+        </div>
+      </div>
+
+      <div className="flex gap-2 mt-4">
+        <button onClick={() => setRunning(!running)} className="bg-green-500 text-white px-4 py-2 rounded">
+          {running ? "停止" : "自動開始"}
+        </button>
+        <button onClick={() => reset("day")} className="bg-yellow-400 px-3 rounded">日</button>
+        <button onClick={() => reset("month")} className="bg-orange-400 px-3 rounded">月</button>
+        <button onClick={() => reset("total")} className="bg-red-400 px-3 rounded">総</button>
+      </div>
+
+      <div className="mt-4 bg-white p-4 rounded-2xl shadow">
+        <textarea
+          maxLength={200}
+          value={state.intention}
+          onChange={(e) => setState({ ...state, intention: e.target.value })}
+          className="w-full border p-2 rounded"
+          placeholder="御祈念"
+        />
+      </div>
+
+      {Object.keys(members).map((k) => {
+        if (state.total >= Number(k)) {
+          const m = members[k];
+          return (
+            <div key={k} className="mt-4 p-4 bg-yellow-100 rounded-2xl">
+              <h2 className="font-bold">🎉 {m.name}</h2>
+              <p>{m.msg}</p>
+              <div>📸 画像エリア（後で差し替えOK）</div>
+            </div>
+          );
+        }
+        return null;
+      })}
+
+      {/* ============================= */}
+      {/* 📱 PWA追加ファイル説明 */}
+      {/* ============================= */}
+
+      <div className="mt-6 p-4 bg-black text-white rounded-2xl">
+        <h3 className="font-bold">📱 PWA化に必要な追加ファイル</h3>
+        <pre>{`/public/manifest.json
+/public/sw.js
+
+👉 manifest.json（例）
+{
+  "name": "DayDreamプラス 題目カウンター",
+  "short_name": "DayDream",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ff66cc",
+  "icons": []
+}
+
+👉 sw.js（例）
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('fetch', () => {});
+`}</pre>
+      </div>
+    </div>
+  );
+}
