@@ -3,12 +3,19 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>DayDreamプラス 題目カウンター DX</title>
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1.0,
+viewport-fit=cover">
+
+<title>
+DayDreamプラス 題目カウンター DX
+</title>
 
 <link rel="manifest" href="manifest.json">
 
-<meta name="theme-color" content="#ff66cc">
+<meta name="theme-color"
+content="#ff66cc">
 
 <style>
 
@@ -29,7 +36,7 @@ color:#222;
 
 h1{
 text-align:center;
-font-size:32px;
+font-size:30px;
 margin-bottom:20px;
 }
 
@@ -38,7 +45,8 @@ background:white;
 border-radius:24px;
 padding:18px;
 margin-bottom:18px;
-box-shadow:0 6px 14px rgba(0,0,0,0.15);
+box-shadow:
+0 6px 14px rgba(0,0,0,0.15);
 }
 
 button{
@@ -53,11 +61,6 @@ cursor:pointer;
 
 .startBtn{
 background:#00c853;
-color:white;
-}
-
-.stopBtn{
-background:#ff1744;
 color:white;
 }
 
@@ -123,21 +126,18 @@ font-size:24px;
 color:#ff1744;
 }
 
-img{
-width:100%;
-border-radius:18px;
-margin-top:12px;
-}
-
 @keyframes fadein{
+
 from{
 opacity:0;
 transform:translateY(20px);
 }
+
 to{
 opacity:1;
 transform:translateY(0);
 }
+
 }
 
 </style>
@@ -146,7 +146,9 @@ transform:translateY(0);
 
 <body>
 
-<h1>🌈 DayDreamプラス 題目カウンター DX</h1>
+<h1>
+🌈 DayDreamプラス 題目カウンター DX
+</h1>
 
 <div class="card">
 
@@ -159,7 +161,9 @@ transform:translateY(0);
 
 <div>
 🚀 開始時刻:
-<span id="startTime">未開始</span>
+<span id="startTime">
+未開始
+</span>
 </div>
 
 <br>
@@ -187,7 +191,9 @@ transform:translateY(0);
 
 <div class="card">
 
-<label>⚡ 1分間唱題数</label>
+<label>
+⚡ 1分間唱題数
+</label>
 
 <input
 type="number"
@@ -196,7 +202,9 @@ value="60"
 
 >
 
-<label>🎯 1時間唱題目標</label>
+<label>
+🎯 1時間唱題目標
+</label>
 
 <input
 type="number"
@@ -226,7 +234,9 @@ id="startButton"
 
 >
 
-▶ 自動開始 </button>
+▶ 自動開始 / 停止
+
+</button>
 
 <button
 class="resetBtn"
@@ -234,7 +244,9 @@ onclick="resetDay()"
 
 >
 
-📅 日リセット </button>
+📅 日リセット
+
+</button>
 
 <button
 class="resetBtn"
@@ -242,7 +254,9 @@ onclick="resetMonth()"
 
 >
 
-🗓️ 月リセット </button>
+🗓️ 月リセット
+
+</button>
 
 <button
 class="resetBtn"
@@ -250,13 +264,17 @@ onclick="resetTotal()"
 
 >
 
-🏆 総リセット </button>
+🏆 総リセット
+
+</button>
 
 </div>
 
 <div class="card">
 
-<h2>🙏 御祈念入力</h2>
+<h2>
+🙏 御祈念入力
+</h2>
 
 <textarea
 id="prayer"
@@ -271,7 +289,9 @@ onclick="savePrayer()"
 
 >
 
-💾 御祈念保存 </button>
+💾 御祈念保存
+
+</button>
 
 <div id="saveMessage"></div>
 
@@ -279,7 +299,9 @@ onclick="savePrayer()"
 
 <div class="card">
 
-<h2>🌈 DayDream達成演出</h2>
+<h2>
+🌈 DayDream達成演出
+</h2>
 
 <div id="achievementArea"></div>
 
@@ -287,7 +309,8 @@ onclick="savePrayer()"
 
 <script>
 
-const STORAGE='daydream_dx_counter';
+const STORAGE =
+'daydream_dx_counter';
 
 let state =
 JSON.parse(
@@ -317,18 +340,26 @@ JSON.stringify(state)
 
 function updateUI(){
 
-document.getElementById('daily').innerText =
+document.getElementById(
+'daily'
+).innerText =
 Math.floor(state.daily);
 
-document.getElementById('monthly').innerText =
+document.getElementById(
+'monthly'
+).innerText =
 Math.floor(state.monthly);
 
-document.getElementById('total').innerText =
+document.getElementById(
+'total'
+).innerText =
 Math.floor(state.total);
 
 if(state.start){
 
-document.getElementById('startTime').innerText =
+document.getElementById(
+'startTime'
+).innerText =
 new Date(state.start)
 .toLocaleString('ja-JP');
 
@@ -336,8 +367,9 @@ new Date(state.start)
 
 const goal =
 Number(
-document.getElementById('goal').value
-|| 1
+document.getElementById(
+'goal'
+).value || 1
 );
 
 const percent =
@@ -348,10 +380,14 @@ Math.floor(
 )
 );
 
-document.getElementById('percent').innerText =
+document.getElementById(
+'percent'
+).innerText =
 percent;
 
-document.getElementById('fill').style.width =
+document.getElementById(
+'fill'
+).style.width =
 percent + '%';
 
 save();
@@ -364,8 +400,9 @@ function tick(){
 
 const perMinute =
 Number(
-document.getElementById('perMinute').value
-|| 60
+document.getElementById(
+'perMinute'
+).value || 60
 );
 
 const add =
@@ -388,7 +425,8 @@ if(state.auto){
 
 if(!state.start){
 
-state.start=Date.now();
+state.start=
+Date.now();
 
 }
 
@@ -399,7 +437,8 @@ tick,
 
 document.getElementById(
 'startButton'
-).innerText='⏹ 停止';
+).innerText =
+'⏹ 停止';
 
 }else{
 
@@ -407,7 +446,8 @@ clearInterval(timer);
 
 document.getElementById(
 'startButton'
-).innerText='▶ 自動開始';
+).innerText =
+'▶ 自動開始';
 
 }
 
@@ -596,7 +636,8 @@ if(savedPrayer){
 
 document.getElementById(
 'prayer'
-).value=savedPrayer;
+).value =
+savedPrayer;
 
 }
 
@@ -619,12 +660,52 @@ new Date()
 
 },1000);
 
+// iPhoneスリープ防止強化
+
+let wakeLock = null;
+
+async function requestWakeLock(){
+
+try{
+
 if('wakeLock' in navigator){
 
-navigator.wakeLock.request('screen')
-.catch(()=>{});
+wakeLock =
+await navigator
+.wakeLock
+.request('screen');
 
 }
+
+}catch(err){
+
+console.log(err);
+
+}
+
+}
+
+document.addEventListener(
+'visibilitychange',
+async()=>{
+
+if(
+wakeLock !== null &&
+document.visibilityState ===
+'visible'
+){
+
+wakeLock =
+await navigator
+.wakeLock
+.request('screen');
+
+}
+
+}
+);
+
+requestWakeLock();
 
 updateUI();
 
