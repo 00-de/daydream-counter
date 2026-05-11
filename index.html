@@ -56,6 +56,11 @@ button{
   color:white;
 }
 
+.deleteBtn{
+  background:#d50000;
+  color:white;
+}
+
 input,textarea{
   width:100%;
   padding:12px;
@@ -112,6 +117,13 @@ input,textarea{
 .big{
   font-size:20px;
   color:#d50000;
+}
+
+.historyItem{
+  margin-top:12px;
+  padding:12px;
+  border-radius:14px;
+  background:#f5f5f5;
 }
 
 @keyframes pop{
@@ -228,17 +240,33 @@ onclick="resetTotal()">
 <textarea
 id="prayer"
 rows="5"
-maxlength="200"
-placeholder="御祈念を入力してください"></textarea>
+maxlength="300"
+placeholder="御祈念入力"></textarea>
 
 <button class="saveBtn"
 onclick="savePrayer()">
 💾 保存
 </button>
 
+<button class="deleteBtn"
+onclick="clearPrayer()">
+🗑️ 入力削除
+</button>
+
 </div>
 
-<!-- 演出 -->
+<!-- 履歴 -->
+<div class="card">
+
+<h2>📝 過去の御祈念履歴</h2>
+
+<div id="historyArea">
+まだ保存されていません
+</div>
+
+</div>
+
+<!-- 達成演出 -->
 <div class="card">
 
 <h2>🌈 達成演出</h2>
@@ -250,28 +278,22 @@ onclick="savePrayer()">
 <script>
 
 const STORAGE='daydream_dx_final';
-
-/* 達成保存キー */
 const ACHIEVEMENT_KEY='daydream_achievements';
+const PRAYER_KEY='prayerHistory';
 
 let state=JSON.parse(localStorage.getItem(STORAGE))||{
 
   daily:0,
   monthly:0,
   total:0,
-
   start:null,
   fixedStart:null,
-
   running:false,
-
   perMinute:60,
-
   dailyAchieved:false
 
 };
 
-/* 達成保存 */
 let savedAchievements=
 JSON.parse(
   localStorage.getItem(ACHIEVEMENT_KEY)
@@ -310,9 +332,11 @@ function getCounts(){
 
   }
 
-  const sec=(Date.now()-state.start)/1000;
+  const sec=
+  (Date.now()-state.start)/1000;
 
-  const add=sec*(state.perMinute/60);
+  const add=
+  sec*(state.perMinute/60);
 
   return{
 
@@ -388,7 +412,11 @@ function toggleCounter(){
 
     state.start=Date.now();
 
-    state.fixedStart=Date.now();
+    if(!state.fixedStart){
+
+      state.fixedStart=Date.now();
+
+    }
 
     document.getElementById('statusText').innerText=
     'カウント中';
@@ -426,7 +454,7 @@ function toggleCounter(){
 
 }
 
-/* 5秒自動保存 */
+/* 5秒保存 */
 setInterval(()=>{
 
   if(state.running){
@@ -448,19 +476,103 @@ setInterval(()=>{
 /* 御祈念保存 */
 function savePrayer(){
 
-  const val=
-  document.getElementById('prayer').value;
+  const text=
+  document.getElementById('prayer').value.trim();
+
+  if(!text){
+
+    alert("御祈念入力してください");
+
+    return;
+
+  }
+
+  const now=new Date();
+
+  const item={
+
+    date:now.toLocaleDateString('ja-JP'),
+    time:now.toLocaleTimeString('ja-JP'),
+    text:text
+
+  };
+
+  let history=
+  JSON.parse(
+    localStorage.getItem(PRAYER_KEY)
+  )||[];
+
+  history.unshift(item);
 
   localStorage.setItem(
-    'prayer',
-    val
+    PRAYER_KEY,
+    JSON.stringify(history)
   );
 
   alert("🙏 御祈念を保存しました");
 
+  document.getElementById('prayer').value='';
+
+  renderHistory();
+
 }
 
-/* 🌈達成追加 */
+/* 入力削除 */
+function clearPrayer(){
+
+  document.getElementById('prayer').value='';
+
+}
+
+/* 履歴表示 */
+function renderHistory(){
+
+  const area=
+  document.getElementById('historyArea');
+
+  let history=
+  JSON.parse(
+    localStorage.getItem(PRAYER_KEY)
+  )||[];
+
+  if(history.length===0){
+
+    area.innerHTML=
+    'まだ保存されていません';
+
+    return;
+
+  }
+
+  area.innerHTML='';
+
+  history.forEach(item=>{
+
+    const div=
+    document.createElement('div');
+
+    div.className='historyItem';
+
+    div.innerHTML=`
+
+      <div>
+      📅 ${item.date}
+      ⏰ ${item.time}
+      </div>
+
+      <div style="margin-top:8px;">
+      🙏 ${item.text}
+      </div>
+
+    `;
+
+    area.appendChild(div);
+
+  });
+
+}
+
+/* 達成追加 */
 function addAchievement(id,message,big=false){
 
   if(savedAchievements.includes(id)){
@@ -471,7 +583,8 @@ function addAchievement(id,message,big=false){
 
   saveAchievements();
 
-  const div=document.createElement('div');
+  const div=
+  document.createElement('div');
 
   div.id=id;
 
@@ -488,7 +601,32 @@ function addAchievement(id,message,big=false){
 
 }
 
-/* 保存済み演出復元 */
+/* 表示専用 */
+function addVisual(id,message,big=false){
+
+  if(document.getElementById(id)){
+    return;
+  }
+
+  const div=
+  document.createElement('div');
+
+  div.id=id;
+
+  div.className=
+  big
+  ? 'achievement big'
+  : 'achievement';
+
+  div.innerHTML=message;
+
+  document
+  .getElementById('achievementArea')
+  .prepend(div);
+
+}
+
+/* 演出復元 */
 function restoreAchievements(){
 
   savedAchievements.forEach(id=>{
@@ -503,67 +641,11 @@ function restoreAchievements(){
 
     }
 
-    if(id==='ach10000'){
-      addVisual(id,'🥁 大地：おめでとう～よくやったね☺');
-    }
-
-    if(id==='ach50000'){
-      addVisual(id,'🎀 葵：おめでとう～お疲れ様です(#^.^#)');
-    }
-
-    if(id==='ach100000'){
-      addVisual(id,'🎸 蓮：やったね(^^♪地道に進もう');
-    }
-
-    if(id==='ach200000'){
-      addVisual(id,'🎤 結衣：やった～私の歌で元気を送るね');
-    }
-
-    if(id==='ach500000'){
-      addVisual(id,'🎹 悠真：さすが～未来のリーダー');
-    }
-
-    if(id==='ach750000'){
-      addVisual(id,'✨ 美琴：あともう少しで100万遍');
-    }
-
-    if(id==='ach1000000'){
-      addVisual(
-        id,
-        '🏆 全員：やったねやったよ～100万遍あげられたのはあなた自身の称号だよ✨',
-        true
-      );
-    }
-
   });
 
 }
 
-/* 表示専用 */
-function addVisual(id,message,big=false){
-
-  if(document.getElementById(id)){
-    return;
-  }
-
-  const div=document.createElement('div');
-
-  div.id=id;
-
-  div.className=
-  big
-  ? 'achievement big'
-  : 'achievement';
-
-  div.innerHTML=message;
-
-  document
-  .getElementById('achievementArea')
-  .prepend(div);
-
-}
-
-/* 🌅1日目標 */
+/* 1日目標 */
 function checkDailyGoal(c){
 
   const goal=
@@ -590,7 +672,7 @@ function checkDailyGoal(c){
 
 }
 
-/* 🌈段階演出 */
+/* 段階演出 */
 function checkAchievements(total){
 
   if(total>=10000){
@@ -668,14 +750,6 @@ function resetDay(){
 
   save();
 
-  savedAchievements=[];
-
-  saveAchievements();
-
-  document
-  .getElementById('achievementArea')
-  .innerHTML='';
-
   updateUI();
 
 }
@@ -718,11 +792,10 @@ setInterval(()=>{
 
 },1000);
 
-/* 御祈念欄空白固定 */
-document.getElementById('prayer').value='';
-
-/* 演出復元 */
+/* 初期表示 */
 restoreAchievements();
+
+renderHistory();
 
 updateUI();
 
