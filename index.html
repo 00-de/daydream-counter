@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
 <title>DayDreamプラス 題目カウンター DX+</title>
 
 <style>
+
 body{
   margin:0;
   padding:20px;
@@ -39,9 +41,20 @@ button{
   cursor:pointer;
 }
 
-.startBtn{background:#00c853;color:white;}
-.resetBtn{background:#ff7043;color:white;}
-.saveBtn{background:#2979ff;color:white;}
+.startBtn{
+  background:#00c853;
+  color:white;
+}
+
+.resetBtn{
+  background:#ff7043;
+  color:white;
+}
+
+.saveBtn{
+  background:#2979ff;
+  color:white;
+}
 
 input,textarea{
   width:100%;
@@ -65,6 +78,7 @@ input,textarea{
   height:100%;
   width:0%;
   background:linear-gradient(90deg,#00e676,#00b0ff,#ff00aa);
+  transition:0.5s;
 }
 
 .percentText{
@@ -78,8 +92,13 @@ input,textarea{
   font-weight:bold;
 }
 
-.running{color:#00c853;}
-.stop{color:#ff1744;}
+.running{
+  color:#00c853;
+}
+
+.stop{
+  color:#ff1744;
+}
 
 .achievement{
   margin-top:12px;
@@ -87,7 +106,7 @@ input,textarea{
   border-radius:16px;
   background:#fff3cd;
   font-weight:bold;
-  animation:fadein .5s;
+  animation:pop .6s ease;
 }
 
 .big{
@@ -95,10 +114,20 @@ input,textarea{
   color:#d50000;
 }
 
-@keyframes fadein{
-  from{opacity:0;transform:translateY(20px);}
-  to{opacity:1;transform:translateY(0);}
+@keyframes pop{
+
+  0%{
+    transform:scale(.7);
+    opacity:0;
+  }
+
+  100%{
+    transform:scale(1);
+    opacity:1;
+  }
+
 }
+
 </style>
 </head>
 
@@ -108,86 +137,171 @@ input,textarea{
 
 <!-- 状態 -->
 <div class="card">
-<div>⏰ 現在時刻: <span id="clock"></span></div>
-<br>
-<div>🚀 開始時刻: <span id="startTime">未開始</span></div>
-<br>
-<div>📅 1日総数: <span id="daily">0</span></div>
-<div>🗓️ 月総数: <span id="monthly">0</span></div>
-<div>🏆 総数: <span id="total">0</span></div>
 
-<div class="status">状態: <span id="statusText" class="stop">停止中</span></div>
+<div>
+⏰ 現在時刻:
+<span id="clock"></span>
+</div>
+
+<br>
+
+<div>
+🚀 開始時刻:
+<span id="startTime">未開始</span>
+</div>
+
+<br>
+
+<div>
+📅 1日総数:
+<span id="daily">0</span>
+</div>
+
+<div>
+🗓️ 月総数:
+<span id="monthly">0</span>
+</div>
+
+<div>
+🏆 総数:
+<span id="total">0</span>
+</div>
+
+<div class="status">
+状態:
+<span id="statusText" class="stop">停止中</span>
+</div>
+
 </div>
 
 <!-- 操作 -->
 <div class="card">
-<button class="startBtn" onclick="toggleCounter()" id="startButton">▶ 自動開始</button>
-<button class="resetBtn" onclick="resetDay()">📅 日リセット</button>
-<button class="resetBtn" onclick="resetMonth()">🗓️ 月リセット</button>
-<button class="resetBtn" onclick="resetTotal()">🏆 総リセット</button>
+
+<button class="startBtn"
+onclick="toggleCounter()"
+id="startButton">
+▶ 自動開始
+</button>
+
+<button class="resetBtn"
+onclick="resetDay()">
+📅 日リセット
+</button>
+
+<button class="resetBtn"
+onclick="resetMonth()">
+🗓️ 月リセット
+</button>
+
+<button class="resetBtn"
+onclick="resetTotal()">
+🏆 総リセット
+</button>
+
 </div>
 
 <!-- 設定 -->
 <div class="card">
+
 <label>⚡ 1分間唱題数</label>
 <input type="number" id="perMinute" value="60">
 
 <label>🎯 1日目標</label>
 <input type="number" id="goal" value="3000">
 
-<div class="percentText">📊 達成率: <span id="percent">0</span>%</div>
+<div class="percentText">
+📊 達成率:
+<span id="percent">0</span>%
+</div>
 
-<div class="bar"><div class="fill" id="fill"></div></div>
+<div class="bar">
+<div class="fill" id="fill"></div>
+</div>
+
 </div>
 
 <!-- 御祈念 -->
 <div class="card">
+
 <h2>🙏 御祈念</h2>
 
-<textarea id="prayer" rows="5" maxlength="200"></textarea>
+<textarea
+id="prayer"
+rows="5"
+maxlength="200"></textarea>
 
-<button class="saveBtn" onclick="savePrayer()">💾 保存</button>
+<button class="saveBtn"
+onclick="savePrayer()">
+💾 保存
+</button>
+
 </div>
 
 <!-- 演出 -->
 <div class="card">
+
 <h2>🌈 達成演出</h2>
+
 <div id="achievementArea"></div>
+
 </div>
 
 <script>
 
 const STORAGE='daydream_dx_final';
 
-let state = JSON.parse(localStorage.getItem(STORAGE)) || {
+let state=JSON.parse(localStorage.getItem(STORAGE))||{
+
   daily:0,
   monthly:0,
   total:0,
+
   start:null,
+  fixedStart:null,
+
   running:false,
+
   perMinute:60,
+
   dailyAchieved:false
+
 };
 
+/* 保存 */
 function save(){
-  localStorage.setItem(STORAGE,JSON.stringify(state));
+
+  localStorage.setItem(
+    STORAGE,
+    JSON.stringify(state)
+  );
+
 }
 
 /* カウント */
 function getCounts(){
 
   if(!state.running || !state.start){
-    return state;
+
+    return{
+      daily:state.daily,
+      monthly:state.monthly,
+      total:state.total
+    };
+
   }
 
   const sec=(Date.now()-state.start)/1000;
+
   const add=sec*(state.perMinute/60);
 
-  return {
+  return{
+
     daily:state.daily+add,
     monthly:state.monthly+add,
     total:state.total+add
+
   };
+
 }
 
 /* UI更新 */
@@ -195,136 +309,314 @@ function updateUI(){
 
   const c=getCounts();
 
-  document.getElementById('daily').innerText=Math.floor(c.daily);
-  document.getElementById('monthly').innerText=Math.floor(c.monthly);
-  document.getElementById('total').innerText=Math.floor(c.total);
+  document.getElementById('daily').innerText=
+  Math.floor(c.daily);
 
-  if(state.start){
+  document.getElementById('monthly').innerText=
+  Math.floor(c.monthly);
+
+  document.getElementById('total').innerText=
+  Math.floor(c.total);
+
+  /* 開始時刻固定表示 */
+  if(state.fixedStart){
+
     document.getElementById('startTime').innerText=
-      new Date(state.start).toLocaleString('ja-JP');
+    new Date(state.fixedStart)
+    .toLocaleString('ja-JP');
+
+  }else{
+
+    document.getElementById('startTime').innerText=
+    '未開始';
+
   }
 
-  const goal=Number(document.getElementById('goal').value||1);
-  const percent=Math.min(100,Math.floor(c.daily/goal*100));
+  const goal=
+  Number(
+    document.getElementById('goal').value||1
+  );
 
-  document.getElementById('percent').innerText=percent;
-  document.getElementById('fill').style.width=percent+'%';
+  const percent=
+  Math.min(
+    100,
+    Math.floor(c.daily/goal*100)
+  );
+
+  document.getElementById('percent').innerText=
+  percent;
+
+  document.getElementById('fill').style.width=
+  percent+'%';
 
   checkDailyGoal(c);
+
   checkAchievements(c.total);
+
 }
 
-/* 開始/停止 */
+/* 開始停止 */
 function toggleCounter(){
 
-  state.perMinute=Number(document.getElementById('perMinute').value||60);
+  state.perMinute=
+  Number(
+    document.getElementById('perMinute').value||60
+  );
 
   if(!state.running){
+
     state.running=true;
+
+    /* 実計測開始 */
     state.start=Date.now();
 
-    document.getElementById('statusText').innerText='カウント中';
-    document.getElementById('statusText').className='running';
-    document.getElementById('startButton').innerText='⏹ 停止';
+    /* 表示固定開始時刻 */
+    state.fixedStart=Date.now();
+
+    document.getElementById('statusText').innerText=
+    'カウント中';
+
+    document.getElementById('statusText').className=
+    'running';
+
+    document.getElementById('startButton').innerText=
+    '⏹ 停止';
 
   }else{
 
     const c=getCounts();
+
     state.daily=c.daily;
     state.monthly=c.monthly;
     state.total=c.total;
 
     state.running=false;
 
-    document.getElementById('statusText').innerText='停止中';
-    document.getElementById('statusText').className='stop';
-    document.getElementById('startButton').innerText='▶ 自動開始';
+    document.getElementById('statusText').innerText=
+    '停止中';
+
+    document.getElementById('statusText').className=
+    'stop';
+
+    document.getElementById('startButton').innerText=
+    '▶ 自動開始';
+
   }
 
   save();
+
   updateUI();
+
 }
 
-/* 🙏 保存 */
+/* 5秒自動保存 */
+setInterval(()=>{
+
+  if(state.running){
+
+    const c=getCounts();
+
+    state.daily=c.daily;
+    state.monthly=c.monthly;
+    state.total=c.total;
+
+    /* 内部時間更新 */
+    state.start=Date.now();
+
+    save();
+
+  }
+
+},5000);
+
+/* 御祈念保存 */
 function savePrayer(){
 
-  const val=document.getElementById('prayer').value;
-  localStorage.setItem('prayer',val);
+  const val=
+  document.getElementById('prayer').value;
+
+  localStorage.setItem(
+    'prayer',
+    val
+  );
 
   alert("🙏 御祈念を保存しました");
+
 }
 
 /* 復元 */
 document.getElementById('prayer').value=
 localStorage.getItem('prayer')||'';
 
-/* 🌅 1日達成 */
+/* 🌅1日目標達成 */
 function checkDailyGoal(c){
 
-  const goal=Number(document.getElementById('goal').value||1);
+  const goal=
+  Number(
+    document.getElementById('goal').value||1
+  );
 
-  if(!state.dailyAchieved && c.daily>=goal){
+  if(
+    !state.dailyAchieved &&
+    c.daily>=goal
+  ){
 
     state.dailyAchieved=true;
+
     save();
 
-    const div=document.createElement('div');
-    div.className='achievement big';
-    div.innerHTML=
-    '🌅 1日目標達成お疲れ様です。自分を労わって明日からも頑張りましょう(^^)v';
+    addAchievement(
+      'dailyGoal',
+      '🌅 1日目標達成お疲れ様です。自分を労わって明日からも頑張りましょう(^^)v',
+      true
+    );
 
-    document.getElementById('achievementArea').prepend(div);
   }
+
 }
 
-/* 🌟段階応援 */
+/* 演出追加 */
+function addAchievement(id,message,big=false){
+
+  if(document.getElementById(id)){
+    return;
+  }
+
+  const div=document.createElement('div');
+
+  div.id=id;
+
+  div.className=
+  big
+  ? 'achievement big'
+  : 'achievement';
+
+  div.innerHTML=message;
+
+  document
+  .getElementById('achievementArea')
+  .prepend(div);
+
+}
+
+/* 🌈段階演出 */
 function checkAchievements(total){
 
-  let html='';
-
   if(total>=10000){
-    html+=`<div class="achievement">🥁 大地：おめでとう～よくやったね☺</div>`;
+
+    addAchievement(
+      'ach10000',
+      '🥁 大地：おめでとう～よくやったね☺'
+    );
+
   }
 
   if(total>=50000){
-    html+=`<div class="achievement">🎀 葵：おめでとう～お疲れ様です(#^.^#)</div>`;
+
+    addAchievement(
+      'ach50000',
+      '🎀 葵：おめでとう～お疲れ様です(#^.^#)'
+    );
+
   }
 
   if(total>=100000){
-    html+=`<div class="achievement">🎸 蓮：やったね(^^♪地道に進もう</div>`;
+
+    addAchievement(
+      'ach100000',
+      '🎸 蓮：やったね(^^♪地道に進もう'
+    );
+
   }
 
   if(total>=200000){
-    html+=`<div class="achievement">🎤 結衣：やった～私の歌で元気を送るね</div>`;
+
+    addAchievement(
+      'ach200000',
+      '🎤 結衣：やった～私の歌で元気を送るね'
+    );
+
   }
 
   if(total>=500000){
-    html+=`<div class="achievement">🎹 悠真：さすが～未来のリーダー</div>`;
+
+    addAchievement(
+      'ach500000',
+      '🎹 悠真：さすが～未来のリーダー'
+    );
+
   }
 
   if(total>=750000){
-    html+=`<div class="achievement">✨ 美琴：あともう少しで100万遍</div>`;
+
+    addAchievement(
+      'ach750000',
+      '✨ 美琴：あともう少しで100万遍'
+    );
+
   }
 
   if(total>=1000000){
-    html+=`<div class="achievement big">🏆 全員：
-    やったねやったよ～100万遍あげらたのはあなた自身の称号だよ
-    体調には気を付けて進んでね(#^.^#)</div>`;
+
+    addAchievement(
+      'ach1000000',
+      '🏆 全員：やったねやったよ～100万遍あげられたのはあなた自身の称号だよ✨',
+      true
+    );
+
   }
 
-  document.getElementById('achievementArea').innerHTML=html;
 }
 
 /* リセット */
-function resetDay(){state.daily=0;state.dailyAchieved=false;save();updateUI();}
-function resetMonth(){state.monthly=0;save();updateUI();}
-function resetTotal(){state.total=0;save();updateUI();}
+function resetDay(){
+
+  state.daily=0;
+
+  state.dailyAchieved=false;
+
+  save();
+
+  document
+  .getElementById('achievementArea')
+  .innerHTML='';
+
+  updateUI();
+
+}
+
+function resetMonth(){
+
+  state.monthly=0;
+
+  save();
+
+  updateUI();
+
+}
+
+function resetTotal(){
+
+  state.total=0;
+
+  save();
+
+  document
+  .getElementById('achievementArea')
+  .innerHTML='';
+
+  updateUI();
+
+}
 
 /* 時計 */
 setInterval(()=>{
+
   document.getElementById('clock').innerText=
   new Date().toLocaleString('ja-JP');
+
   updateUI();
+
 },1000);
 
 updateUI();
