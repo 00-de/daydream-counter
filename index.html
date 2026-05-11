@@ -362,6 +362,7 @@ function updateUI(){
   document.getElementById('total').innerText=
   Math.floor(c.total);
 
+  /* 修正部分 */
   if(state.fixedStart){
 
     document.getElementById('startTime').innerText=
@@ -412,11 +413,8 @@ function toggleCounter(){
 
     state.start=Date.now();
 
-    if(!state.fixedStart){
-
-      state.fixedStart=Date.now();
-
-    }
+    /* ←ここ修正 */
+    state.fixedStart=Date.now();
 
     document.getElementById('statusText').innerText=
     'カウント中';
@@ -680,61 +678,6 @@ function checkAchievements(total){
     addAchievement(
       'ach10000',
       '🥁 大地：おめでとう～よくやったね☺'
-    );
-
-  }
-
-  if(total>=50000){
-
-    addAchievement(
-      'ach50000',
-      '🎀 葵：おめでとう～お疲れ様です(#^.^#)'
-    );
-
-  }
-
-  if(total>=100000){
-
-    addAchievement(
-      'ach100000',
-      '🎸 蓮：やったね(^^♪地道に進もう'
-    );
-
-  }
-
-  if(total>=200000){
-
-    addAchievement(
-      'ach200000',
-      '🎤 結衣：やった～私の歌で元気を送るね'
-    );
-
-  }
-
-  if(total>=500000){
-
-    addAchievement(
-      'ach500000',
-      '🎹 悠真：さすが～未来のリーダー'
-    );
-
-  }
-
-  if(total>=750000){
-
-    addAchievement(
-      'ach750000',
-      '✨ 美琴：あともう少しで100万遍'
-    );
-
-  }
-
-  if(total>=1000000){
-
-    addAchievement(
-      'ach1000000',
-      '🏆 全員：やったねやったよ～100万遍あげられたのはあなた自身の称号だよ✨',
-      true
     );
 
   }
