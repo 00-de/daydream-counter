@@ -228,7 +228,8 @@ onclick="resetTotal()">
 <textarea
 id="prayer"
 rows="5"
-maxlength="200"></textarea>
+maxlength="200"
+placeholder="御祈念を入力してください"></textarea>
 
 <button class="saveBtn"
 onclick="savePrayer()">
@@ -250,6 +251,9 @@ onclick="savePrayer()">
 
 const STORAGE='daydream_dx_final';
 
+/* 達成保存キー */
+const ACHIEVEMENT_KEY='daydream_achievements';
+
 let state=JSON.parse(localStorage.getItem(STORAGE))||{
 
   daily:0,
@@ -267,12 +271,28 @@ let state=JSON.parse(localStorage.getItem(STORAGE))||{
 
 };
 
+/* 達成保存 */
+let savedAchievements=
+JSON.parse(
+  localStorage.getItem(ACHIEVEMENT_KEY)
+)||[];
+
 /* 保存 */
 function save(){
 
   localStorage.setItem(
     STORAGE,
     JSON.stringify(state)
+  );
+
+}
+
+/* 達成保存 */
+function saveAchievements(){
+
+  localStorage.setItem(
+    ACHIEVEMENT_KEY,
+    JSON.stringify(savedAchievements)
   );
 
 }
@@ -318,7 +338,6 @@ function updateUI(){
   document.getElementById('total').innerText=
   Math.floor(c.total);
 
-  /* 開始時刻固定表示 */
   if(state.fixedStart){
 
     document.getElementById('startTime').innerText=
@@ -367,10 +386,8 @@ function toggleCounter(){
 
     state.running=true;
 
-    /* 実計測開始 */
     state.start=Date.now();
 
-    /* 表示固定開始時刻 */
     state.fixedStart=Date.now();
 
     document.getElementById('statusText').innerText=
@@ -420,7 +437,6 @@ setInterval(()=>{
     state.monthly=c.monthly;
     state.total=c.total;
 
-    /* 内部時間更新 */
     state.start=Date.now();
 
     save();
@@ -444,11 +460,110 @@ function savePrayer(){
 
 }
 
-/* 復元 */
-document.getElementById('prayer').value=
-localStorage.getItem('prayer')||'';
+/* 🌈達成追加 */
+function addAchievement(id,message,big=false){
 
-/* 🌅1日目標達成 */
+  if(savedAchievements.includes(id)){
+    return;
+  }
+
+  savedAchievements.push(id);
+
+  saveAchievements();
+
+  const div=document.createElement('div');
+
+  div.id=id;
+
+  div.className=
+  big
+  ? 'achievement big'
+  : 'achievement';
+
+  div.innerHTML=message;
+
+  document
+  .getElementById('achievementArea')
+  .prepend(div);
+
+}
+
+/* 保存済み演出復元 */
+function restoreAchievements(){
+
+  savedAchievements.forEach(id=>{
+
+    if(id==='dailyGoal'){
+
+      addVisual(
+        id,
+        '🌅 1日目標達成お疲れ様です。自分を労わって明日からも頑張りましょう(^^)v',
+        true
+      );
+
+    }
+
+    if(id==='ach10000'){
+      addVisual(id,'🥁 大地：おめでとう～よくやったね☺');
+    }
+
+    if(id==='ach50000'){
+      addVisual(id,'🎀 葵：おめでとう～お疲れ様です(#^.^#)');
+    }
+
+    if(id==='ach100000'){
+      addVisual(id,'🎸 蓮：やったね(^^♪地道に進もう');
+    }
+
+    if(id==='ach200000'){
+      addVisual(id,'🎤 結衣：やった～私の歌で元気を送るね');
+    }
+
+    if(id==='ach500000'){
+      addVisual(id,'🎹 悠真：さすが～未来のリーダー');
+    }
+
+    if(id==='ach750000'){
+      addVisual(id,'✨ 美琴：あともう少しで100万遍');
+    }
+
+    if(id==='ach1000000'){
+      addVisual(
+        id,
+        '🏆 全員：やったねやったよ～100万遍あげられたのはあなた自身の称号だよ✨',
+        true
+      );
+    }
+
+  });
+
+}
+
+/* 表示専用 */
+function addVisual(id,message,big=false){
+
+  if(document.getElementById(id)){
+    return;
+  }
+
+  const div=document.createElement('div');
+
+  div.id=id;
+
+  div.className=
+  big
+  ? 'achievement big'
+  : 'achievement';
+
+  div.innerHTML=message;
+
+  document
+  .getElementById('achievementArea')
+  .prepend(div);
+
+}
+
+/* 🌅1日目標 */
 function checkDailyGoal(c){
 
   const goal=
@@ -472,30 +587,6 @@ function checkDailyGoal(c){
     );
 
   }
-
-}
-
-/* 演出追加 */
-function addAchievement(id,message,big=false){
-
-  if(document.getElementById(id)){
-    return;
-  }
-
-  const div=document.createElement('div');
-
-  div.id=id;
-
-  div.className=
-  big
-  ? 'achievement big'
-  : 'achievement';
-
-  div.innerHTML=message;
-
-  document
-  .getElementById('achievementArea')
-  .prepend(div);
 
 }
 
@@ -577,6 +668,10 @@ function resetDay(){
 
   save();
 
+  savedAchievements=[];
+
+  saveAchievements();
+
   document
   .getElementById('achievementArea')
   .innerHTML='';
@@ -601,6 +696,10 @@ function resetTotal(){
 
   save();
 
+  savedAchievements=[];
+
+  saveAchievements();
+
   document
   .getElementById('achievementArea')
   .innerHTML='';
@@ -618,6 +717,12 @@ setInterval(()=>{
   updateUI();
 
 },1000);
+
+/* 御祈念欄空白固定 */
+document.getElementById('prayer').value='';
+
+/* 演出復元 */
+restoreAchievements();
 
 updateUI();
 
