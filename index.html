@@ -5,50 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DayDreamプラス DX+</title>
 
-<!-- PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 body{
   margin:0;
-  padding:20px;
   font-family:sans-serif;
   background:linear-gradient(135deg,#ffb6f9,#b5d7ff,#ffe59e);
+  min-height:100vh;
 }
 
-h1{text-align:center;}
+/* 🌈 ヘッダー固定（消え防止） */
+.header{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  background:linear-gradient(135deg,#ffb6f9,#b5d7ff,#ffe59e);
+  padding:12px;
+  text-align:center;
+  font-weight:bold;
+  font-size:20px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
 
 .card{
-  background:#fff;
-  padding:18px;
-  border-radius:20px;
-  margin-bottom:15px;
-  box-shadow:0 6px 14px rgba(0,0,0,.15);
+  background:white;
+  margin:12px;
+  padding:14px;
+  border-radius:16px;
+  box-shadow:0 6px 14px rgba(0,0,0,0.15);
 }
 
 button{
-  border:none;
-  padding:10px 12px;
-  border-radius:10px;
+  padding:10px;
   margin:4px;
+  border:none;
+  border-radius:10px;
   font-weight:bold;
   cursor:pointer;
 }
 
-.startBtn{background:#00c853;color:#fff;}
-.resetBtn{background:#ff7043;color:#fff;}
-.navBtn{background:#7c4dff;color:#fff;}
+.startBtn{background:#00c853;color:white;}
+.resetBtn{background:#ff7043;color:white;}
+.navBtn{background:#7c4dff;color:white;}
 
 input,textarea{
   width:100%;
   padding:10px;
-  border-radius:10px;
   margin-top:8px;
+  border-radius:10px;
   box-sizing:border-box;
 }
 
 .bar{
-  height:24px;
+  height:18px;
   background:#ddd;
   border-radius:999px;
   overflow:hidden;
@@ -63,20 +73,19 @@ input,textarea{
 .hidden{display:none;}
 
 .achievement{
-  margin-top:10px;
-  padding:12px;
+  margin-top:8px;
+  padding:10px;
   background:#fff3cd;
-  border-radius:14px;
+  border-radius:10px;
   font-weight:bold;
 }
 
-/* 🌌宇宙 */
+/* 🌌宇宙MV */
 #space{
   position:fixed;
   inset:0;
   background:black;
   display:none;
-  overflow:hidden;
   z-index:9999;
 }
 
@@ -99,7 +108,7 @@ input,textarea{
   left:50%;
   transform:translate(-50%,-50%);
   color:white;
-  font-size:28px;
+  font-size:26px;
   text-align:center;
 }
 </style>
@@ -107,28 +116,29 @@ input,textarea{
 
 <body>
 
-<h1>🌈 DayDreamプラス DX+</h1>
+<!-- 🌈 タイトル（絶対消えない構造） -->
+<div class="header">
+🌈 題目カウンター DayDreamプラス DX+
+</div>
 
 <!-- MAIN -->
 <div id="main">
 
 <div class="card">
 <div>⏰ <span id="clock"></span></div>
-<div>🚀 <span id="startTime">未開始</span></div>
+<div>🚀 開始: <span id="startTime">未開始</span></div>
 <hr>
-<div>📅 日 <span id="daily">0</span></div>
-<div>🗓️ 月 <span id="monthly">0</span></div>
-<div>🏆 総 <span id="total">0</span></div>
+<div>📅 日: <span id="daily">0</span></div>
+<div>🗓️ 月: <span id="monthly">0</span></div>
+<div>🏆 総: <span id="total">0</span></div>
 </div>
 
 <div class="card">
 
 <button class="startBtn" onclick="toggle()" id="btn">▶開始</button>
-
 <button class="resetBtn" onclick="resetDay()">日リセット</button>
 <button class="resetBtn" onclick="resetMonth()">月リセット</button>
 <button class="resetBtn" onclick="resetTotal()">総リセット</button>
-
 <button class="navBtn" onclick="openPrayer()">🙏御祈念</button>
 
 </div>
@@ -162,9 +172,10 @@ input,textarea{
 <textarea id="text" maxlength="300"></textarea>
 
 <button class="startBtn" onclick="savePrayer()">保存</button>
-<button class="navBtn" onclick="shareToLINE()">📱LINE共有</button>
-<button class="startBtn" onclick="downloadPDF()">📄PDF</button>
+<button class="navBtn" onclick="shareLINE()">LINE共有</button>
+<button class="startBtn" onclick="pdf()">PDF</button>
 <button class="navBtn" onclick="back()">戻る</button>
+
 </div>
 
 <div class="card">
@@ -174,31 +185,38 @@ input,textarea{
 
 </div>
 
-<!-- SPACE -->
+<!-- 🌌宇宙 -->
 <div id="space">
-  <div class="mvText">🏆1,000,000達成<br>DAYDREAM覚醒</div>
+  <div class="mvText">🏆 1,000,000達成<br>DAYDREAM覚醒</div>
 </div>
 
 <script>
 
+/* ================= SAFE ================= */
+function safe(fn){
+  try{fn();}
+  catch(e){console.log(e);}
+}
+
+/* ================= STATE ================= */
 const STORAGE="dx_v1";
 const PRAYER="dx_prayer_v1";
 
-/* STATE */
 let state=JSON.parse(localStorage.getItem(STORAGE))||{
-  daily:0,monthly:0,total:0,
-  start:0,fixedStart:0,
+  daily:0,
+  monthly:0,
+  total:0,
+  start:0,
+  fixedStart:0,
   running:false,
-  perMinute:60,
-  goalDone:false,
-  stage:{10000:false,50000:false,100000:false,200000:false,500000:false,700000:false,1000000:false}
+  perMinute:60
 };
 
 function save(){
   localStorage.setItem(STORAGE,JSON.stringify(state));
 }
 
-/* COUNT */
+/* ================= COUNT ================= */
 function get(){
   if(!state.running)return state;
 
@@ -212,44 +230,52 @@ function get(){
   };
 }
 
-/* UI */
+/* ================= UI（絶対落ちない） ================= */
 function ui(){
 
-  let c=get();
+  safe(()=>{
 
-  daily.textContent=Math.floor(c.daily);
-  monthly.textContent=Math.floor(c.monthly);
-  total.textContent=Math.floor(c.total);
+    let c=get();
 
-  startTime.textContent=
-    state.fixedStart?
-    new Date(state.fixedStart).toLocaleString():"未開始";
+    document.getElementById("daily").innerText=Math.floor(c.daily);
+    document.getElementById("monthly").innerText=Math.floor(c.monthly);
+    document.getElementById("total").innerText=Math.floor(c.total);
 
-  let goal=+goalInput.value||1;
-  let p=Math.min(100,Math.floor(c.daily/goal*100));
+    document.getElementById("startTime").innerText=
+      state.fixedStart
+      ? new Date(state.fixedStart).toLocaleString()
+      : "未開始";
 
-  percent.textContent=p;
-  fill.style.width=p+"%";
+    let goal=Number(document.getElementById("goal").value||1);
+    let p=Math.min(100,Math.floor(c.daily/goal*100));
 
-  checkStage(c.total);
+    document.getElementById("percent").innerText=p;
+    document.getElementById("fill").style.width=p+"%";
+
+    checkStage(c.total);
+
+  });
+
 }
 
-/* CLOCK */
+/* ================= CLOCK ================= */
 setInterval(()=>{
-  clock.textContent=new Date().toLocaleString();
-  ui();
+  safe(()=>{
+    document.getElementById("clock").innerText=new Date().toLocaleString();
+    ui();
+  });
 },1000);
 
-/* START */
+/* ================= START ================= */
 function toggle(){
 
-  state.perMinute=+perMinute.value;
+  state.perMinute=Number(document.getElementById("perMinute").value||60);
 
   if(!state.running){
     state.running=true;
     state.start=Date.now();
     state.fixedStart=Date.now();
-    btn.textContent="停止";
+    document.getElementById("btn").innerText="停止";
   }else{
 
     let c=get();
@@ -258,97 +284,74 @@ function toggle(){
     state.total=c.total;
 
     state.running=false;
-    btn.textContent="開始";
+    document.getElementById("btn").innerText="開始";
   }
 
   save();
 }
 
-/* STAGE */
-function checkStage(t){
-
-  let s=state.stage;
-
-  if(t>=10000&&!s[10000])add("🥁大地");
-  if(t>=50000&&!s[50000])add("🎀葵");
-  if(t>=100000&&!s[100000])add("🎸蓮");
-  if(t>=200000&&!s[200000])add("🎤結衣");
-  if(t>=500000&&!s[500000])add("🎹悠真");
-
-  if(t>=1000000&&!s[1000000]){
-    s[1000000]=true;
-    add("🏆覚醒");
-    space();
-  }
-
-  save();
-}
-
-/* ADD */
-function add(t){
-  let d=document.createElement("div");
-  d.className="achievement";
-  d.textContent=t;
-  achievement.prepend(d);
-}
-
-/* RESET */
+/* ================= RESET ================= */
 function resetDay(){state.daily=0;save();}
 function resetMonth(){state.monthly=0;save();}
 function resetTotal(){state.total=0;save();}
 
-/* PRAYER */
+/* ================= PRAYER ================= */
 function openPrayer(){
-  main.classList.add("hidden");
-  prayerPage.classList.remove("hidden");
+  document.getElementById("main").classList.add("hidden");
+  document.getElementById("prayerPage").classList.remove("hidden");
   render();
 }
 
 function back(){
-  main.classList.remove("hidden");
-  prayerPage.classList.add("hidden");
+  document.getElementById("main").classList.remove("hidden");
+  document.getElementById("prayerPage").classList.add("hidden");
 }
 
-/* SAVE */
+/* ================= PRAYER SAVE ================= */
 function savePrayer(){
 
-  let t=text.value.trim();
+  let t=document.getElementById("text").value.trim();
   if(!t)return;
 
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
 
-  list.unshift({d:new Date().toLocaleString(),t,ok:false});
+  list.unshift({
+    d:new Date().toLocaleString(),
+    t:t,
+    ok:false
+  });
 
   localStorage.setItem(PRAYER,JSON.stringify(list));
 
-  text.value="";
+  document.getElementById("text").value="";
   render();
 }
 
-/* RENDER */
+/* ================= RENDER ================= */
 function render(){
 
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
-  listEl.innerHTML="";
+  let box=document.getElementById("list");
+
+  box.innerHTML="";
 
   list.forEach((x,i)=>{
 
-    let d=document.createElement("div");
-    d.className="achievement";
+    let div=document.createElement("div");
+    div.className="achievement";
 
-    d.innerHTML=`
+    div.innerHTML=`
       <div>${x.d}</div>
-      <div>🙏${x.t}</div>
-
+      <div>🙏 ${x.t}</div>
       <button onclick="ok(${i})" style="color:${x.ok?'red':''}">◎</button>
       <button onclick="del(${i})">削除</button>
     `;
 
-    listEl.appendChild(d);
+    box.appendChild(div);
   });
 }
 
-/* ◎ */
+/* ================= ◎ ================= */
 function ok(i){
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
   list[i].ok=!list[i].ok;
@@ -356,7 +359,7 @@ function ok(i){
   render();
 }
 
-/* DELETE */
+/* ================= DELETE ================= */
 function del(i){
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
   list.splice(i,1);
@@ -364,24 +367,26 @@ function del(i){
   render();
 }
 
-/* LINE */
-function shareToLINE(){
+/* ================= LINE ================= */
+function shareLINE(){
 
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
+  if(!list.length)return;
 
-  let txt="🙏御祈念\n\n";
+  let text="🙏 DayDream御祈念\n\n";
 
   list.forEach(x=>{
-    txt+=x.d+"\n"+x.t+"\n\n";
+    text+=x.d+"\n"+x.t+"\n\n";
   });
 
-  let url="https://social-plugins.line.me/lineit/share?text="+encodeURIComponent(txt);
-
-  window.open(url,"_blank");
+  window.open(
+    "https://social-plugins.line.me/lineit/share?text="+encodeURIComponent(text),
+    "_blank"
+  );
 }
 
-/* PDF */
-function downloadPDF(){
+/* ================= PDF ================= */
+function pdf(){
 
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF();
@@ -394,14 +399,52 @@ function downloadPDF(){
   y+=10;
 
   list.forEach(x=>{
-    doc.text(String(x.d),10,y);y+=7;
-    doc.text(String(x.t),10,y);y+=10;
+
+    let lines=doc.splitTextToSize(String(x.t||""),180);
+
+    doc.text(String(x.d||""),10,y);
+    y+=7;
+
+    lines.forEach(l=>{
+      doc.text(l,10,y);
+      y+=7;
+    });
+
+    y+=5;
+
+    if(y>270){
+      doc.addPage();
+      y=10;
+    }
   });
 
   doc.save("prayer.pdf");
 }
 
-/* SPACE */
+/* ================= STAGE ================= */
+function add(text){
+  let box=document.getElementById("achievement");
+  let div=document.createElement("div");
+  div.className="achievement";
+  div.textContent=text;
+  box.prepend(div);
+}
+
+function checkStage(t){
+
+  if(t>=10000) add("🥁 大地：ここからだね！");
+  if(t>=50000) add("🎀 葵：いい感じ！");
+  if(t>=100000) add("🎸 蓮：積み重ね！");
+  if(t>=200000) add("🎤 結衣：応援してる！");
+  if(t>=500000) add("🎹 悠真：すごい進化");
+
+  if(t>=1000000){
+    add("🏆 全員：100万達成おめでとう！");
+    space();
+  }
+}
+
+/* ================= SPACE ================= */
 function space(){
 
   let s=document.getElementById("space");
