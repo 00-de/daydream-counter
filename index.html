@@ -10,46 +10,9 @@ body{
   margin:0;
   font-family:sans-serif;
   background:linear-gradient(135deg,#ffb6f9,#b5d7ff,#ffe59e);
+  transition:0.3s;
 }
 
-/* 🌌宇宙モード */
-.space{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:black;
-  overflow:hidden;
-  display:none;
-  z-index:9999;
-}
-
-.star{
-  position:absolute;
-  width:2px;
-  height:2px;
-  background:white;
-  border-radius:50%;
-  animation:move 3s linear infinite;
-}
-
-@keyframes move{
-  from{transform:translateY(0);opacity:1;}
-  to{transform:translateY(800px);opacity:0;}
-}
-
-.flash{
-  animation:flash 0.8s infinite;
-}
-
-@keyframes flash{
-  0%{filter:brightness(1);}
-  50%{filter:brightness(2);}
-  100%{filter:brightness(1);}
-}
-
-/* UI */
 .header{
   position:sticky;
   top:0;
@@ -60,7 +23,7 @@ body{
 }
 
 .card{
-  background:white;
+  background:#fff;
   margin:12px;
   padding:14px;
   border-radius:14px;
@@ -106,12 +69,55 @@ input,textarea{
   background:#fff3cd;
   border-radius:10px;
 }
+
+/* 🌌宇宙 */
+.space{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:black;
+  display:none;
+  overflow:hidden;
+  z-index:9999;
+}
+
+.star{
+  position:absolute;
+  width:2px;
+  height:2px;
+  background:white;
+  border-radius:50%;
+  animation:move 3s linear infinite;
+}
+
+@keyframes move{
+  from{transform:translateY(0);opacity:1;}
+  to{transform:translateY(800px);opacity:0;}
+}
+
+/* 🌟画面演出 */
+.flash{animation:flash 0.6s infinite;}
+@keyframes flash{
+  0%{filter:brightness(1);}
+  50%{filter:brightness(1.8);}
+  100%{filter:brightness(1);}
+}
+
+.shake{animation:shake 0.3s infinite;}
+@keyframes shake{
+  0%{transform:translate(0,0);}
+  25%{transform:translate(2px,1px);}
+  50%{transform:translate(-2px,-1px);}
+  75%{transform:translate(1px,-2px);}
+  100%{transform:translate(0,0);}
+}
 </style>
 </head>
 
 <body>
 
-<!-- 🌌宇宙 -->
 <div id="space" class="space"></div>
 
 <div class="header">
@@ -143,7 +149,7 @@ input,textarea{
 1分あたり
 <input id="per" type="number" value="60">
 
-目標
+1日の目標
 <input id="goal" type="number" value="3000">
 
 達成率 <span id="percent">0</span>%
@@ -171,17 +177,23 @@ input,textarea{
 <button class="navBtn" onclick="back()">戻る</button>
 
 <div id="prayerList"></div>
-</div>
 
+</div>
 </div>
 
 <script>
 
-/* ================= DATA ================= */
-const KEY="dx_all_final";
-const PRAY="dx_pray_final";
+/* ================= DOM固定 ================= */
+const main = document.getElementById("main");
+const prayerPage = document.getElementById("prayerPage");
+const prayerList = document.getElementById("prayerList");
+const prayer = document.getElementById("prayer");
 
-let state=JSON.parse(localStorage.getItem(KEY))||{
+/* ================= 永続 ================= */
+const KEY="dx_all_final_v3";
+const PRAY="dx_pray_final_v3";
+
+let state = JSON.parse(localStorage.getItem(KEY)) || {
   daily:0,
   monthly:0,
   total:0,
@@ -193,17 +205,17 @@ let state=JSON.parse(localStorage.getItem(KEY))||{
 };
 
 function save(){
-  localStorage.setItem(KEY,JSON.stringify(state));
+  localStorage.setItem(KEY, JSON.stringify(state));
 }
 
-/* ================= COUNT ================= */
+/* ================= カウント ================= */
 function get(){
-  if(!state.running)return state;
+  if(!state.running) return state;
 
   let sec=(Date.now()-state.start)/1000;
   let add=sec*(state.per/60);
 
-  return{
+  return {
     daily:state.daily+add,
     monthly:state.monthly+add,
     total:state.total+add
@@ -219,10 +231,10 @@ function ui(){
   monthly.textContent=Math.floor(c.monthly);
   total.textContent=Math.floor(c.total);
 
-  startTime.textContent=
+  startTime.textContent =
     state.fixedStart ? new Date(state.fixedStart).toLocaleString() : "未開始";
 
-  let g=goal.value||1;
+  let g=Number(goal.value||1);
   let p=Math.min(100,Math.floor(c.daily/g*100));
 
   percent.textContent=p;
@@ -234,13 +246,13 @@ function ui(){
   save();
 }
 
-/* ================= CLOCK ================= */
+/* ================= 時計 ================= */
 setInterval(()=>{
   clock.textContent=new Date().toLocaleString();
   ui();
 },1000);
 
-/* ================= START ================= */
+/* ================= 開始 ================= */
 function toggle(){
 
   state.per=Number(per.value||60);
@@ -262,7 +274,7 @@ function toggle(){
   save();
 }
 
-/* ================= RESET ================= */
+/* ================= リセット ================= */
 function resetDay(){state.daily=0;state.done=false;save();}
 function resetMonth(){state.monthly=0;save();}
 function resetTotal(){state.total=0;save();}
@@ -277,32 +289,71 @@ function checkDaily(c){
   if(c.daily>=g){
     state.done=true;
     save();
-    add("🌅 1日達成おめでとう！");
+    add("🌅 1日の目標達成！");
+    screenFX();
   }
 }
 
-/* ================= 段階演出 ================= */
-let fired={};
+/* ================= 画面演出 ================= */
+function screenFX(){
+  document.body.classList.add("flash","shake");
 
-function fire(id,fn){
-  if(fired[id]) return;
-  fired[id]=true;
-  fn();
+  setTimeout(()=>{
+    document.body.classList.remove("shake");
+  },2000);
+
+  setTimeout(()=>{
+    document.body.classList.remove("flash");
+  },5000);
 }
 
-/* 🌌宇宙モード */
-function createSpace(){
+/* ================= 段階演出 ================= */
+let stage={};
 
+function add(text){
+  let box=document.getElementById("ach");
+  if(!box) return;
+
+  let d=document.createElement("div");
+  d.className="ach";
+  d.textContent=text;
+  box.prepend(d);
+}
+
+function checkStage(t){
+
+  if(t>=10000 && !stage[10000]){stage[10000]=1;add("🥁 大地：スタート");screenFX();}
+  if(t>=50000 && !stage[50000]){stage[50000]=1;add("🎀 葵：いい感じ");screenFX();}
+  if(t>=100000 && !stage[100000]){stage[100000]=1;add("🎸 蓮：積み重ね");screenFX();}
+  if(t>=200000 && !stage[200000]){stage[200000]=1;add("🎤 結衣：届いた");screenFX();}
+  if(t>=500000 && !stage[500000]){stage[500000]=1;add("🎹 悠真：すごい");screenFX();}
+  if(t>=700000 && !stage[700000]){stage[700000]=1;add("✨ 美琴：あと少し");screenFX();}
+
+  if(t>=1000000 && !stage[1000000]){
+    stage[1000000]=1;
+    add("🏆 100万達成！");
+    add("🌌 宇宙モード起動");
+    createSpace();
+    screenFX();
+
+    setTimeout(()=>{
+      add("🚀 覚醒完了");
+      endSpace();
+    },8000);
+  }
+}
+
+/* ================= 宇宙 ================= */
+function createSpace(){
   space.style.display="block";
   space.innerHTML="";
   document.body.classList.add("flash");
 
-  for(let i=0;i<100;i++){
+  for(let i=0;i<120;i++){
     let s=document.createElement("div");
     s.className="star";
     s.style.left=Math.random()*100+"%";
     s.style.top=Math.random()*100+"%";
-    s.style.animationDuration=(Math.random()*3+2)+"s";
     space.appendChild(s);
   }
 }
@@ -310,38 +361,6 @@ function createSpace(){
 function endSpace(){
   space.style.display="none";
   document.body.classList.remove("flash");
-}
-
-function checkStage(t){
-
-  fire("10k",()=>{if(t>=10000)add("🥁 大地：スタート");});
-  fire("50k",()=>{if(t>=50000)add("🎀 葵：いい感じ");});
-  fire("100k",()=>{if(t>=100000)add("🎸 蓮：積み重ね");});
-  fire("200k",()=>{if(t>=200000)add("🎤 結衣：届いてる");});
-  fire("500k",()=>{if(t>=500000)add("🎹 悠真：すごい");});
-
-  fire("1m",()=>{
-    if(t>=1000000){
-      add("🏆 100万達成！！");
-      add("🌌 宇宙モード突入！！");
-
-      createSpace();
-
-      setTimeout(()=>{
-        add("✨ 覚醒完了");
-        endSpace();
-      },8000);
-    }
-  });
-
-}
-
-/* ================= ADD ================= */
-function add(text){
-  let d=document.createElement("div");
-  d.className="ach";
-  d.textContent=text;
-  ach.prepend(d);
 }
 
 /* ================= 御祈念 ================= */
@@ -358,7 +377,7 @@ function back(){
 
 function savePrayer(){
 
-  let list=JSON.parse(localStorage.getItem(PRAY)||"[]");
+  let list = JSON.parse(localStorage.getItem(PRAY)||"[]");
 
   list.unshift({
     text:prayer.value,
@@ -366,14 +385,14 @@ function savePrayer(){
     ok:false
   });
 
-  localStorage.setItem(PRAY,JSON.stringify(list));
+  localStorage.setItem(PRAY, JSON.stringify(list));
   prayer.value="";
   renderPrayer();
 }
 
 function renderPrayer(){
 
-  let list=JSON.parse(localStorage.getItem(PRAY)||"[]");
+  let list = JSON.parse(localStorage.getItem(PRAY)||"[]");
   prayerList.innerHTML="";
 
   list.forEach((x,i)=>{
@@ -396,16 +415,16 @@ function renderPrayer(){
 }
 
 function toggleOk(i){
-  let list=JSON.parse(localStorage.getItem(PRAY)||"[]");
+  let list = JSON.parse(localStorage.getItem(PRAY)||"[]");
   list[i].ok=!list[i].ok;
-  localStorage.setItem(PRAY,JSON.stringify(list));
+  localStorage.setItem(PRAY, JSON.stringify(list));
   renderPrayer();
 }
 
 function del(i){
-  let list=JSON.parse(localStorage.getItem(PRAY)||"[]");
+  let list = JSON.parse(localStorage.getItem(PRAY)||"[]");
   list.splice(i,1);
-  localStorage.setItem(PRAY,JSON.stringify(list));
+  localStorage.setItem(PRAY, JSON.stringify(list));
   renderPrayer();
 }
 
