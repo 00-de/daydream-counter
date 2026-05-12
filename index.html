@@ -122,32 +122,26 @@ input,textarea{
 
 <h1>🌈 題目カウンター DayDreamプラス DX+</h1>
 
-<!-- ===== MAIN ===== -->
 <div id="main">
 
 <div class="card">
 <div>⏰ 現在: <span id="clock"></span></div>
 <div>🚀 開始: <span id="startTime">未開始</span></div>
 <hr>
-<div>📅 日: <span id="daily">0</span></div>
-<div>🗓️ 月: <span id="monthly">0</span></div>
-<div>🏆 総: <span id="total">0</span></div>
+<div>📅 日: <span id="daily"></span></div>
+<div>🗓️ 月: <span id="monthly"></span></div>
+<div>🏆 総: <span id="total"></span></div>
 </div>
 
 <div class="card">
-
 <button class="startBtn" onclick="toggle()" id="btn">▶ 自動開始</button>
-
 <button class="resetBtn" onclick="resetDay()">📅 日リセット</button>
 <button class="resetBtn" onclick="resetMonth()">🗓️ 月リセット</button>
 <button class="resetBtn" onclick="resetTotal()">🏆 総リセット</button>
-
 <button class="navBtn" onclick="openPrayer()">🙏 御祈念</button>
-
 </div>
 
 <div class="card">
-
 <label>1分あたり</label>
 <input id="perMinute" type="number" value="60">
 
@@ -157,7 +151,6 @@ input,textarea{
 <div>達成率: <span id="percent">0</span>%</div>
 
 <div class="bar"><div class="fill" id="fill"></div></div>
-
 </div>
 
 <div class="card">
@@ -167,14 +160,12 @@ input,textarea{
 
 </div>
 
-<!-- ===== PRAYER PAGE ===== -->
+<!-- PRAYER -->
 <div id="prayerPage" class="hidden">
 
 <div class="card">
 <h2>🙏 御祈念</h2>
-
 <textarea id="text" maxlength="300" rows="5"></textarea>
-
 <button class="startBtn" onclick="savePrayer()">保存</button>
 <button class="navBtn" onclick="back()">戻る</button>
 </div>
@@ -186,7 +177,7 @@ input,textarea{
 
 </div>
 
-<!-- ===== SPACE ===== -->
+<!-- SPACE -->
 <div id="space">
   <div class="mvText">🏆 1,000,000達成<br>DAYDREAM 完全覚醒</div>
 </div>
@@ -196,7 +187,6 @@ input,textarea{
 const STORAGE="dx_v1";
 const PRAYER="dx_prayer_v1";
 
-/* ===== STATE ===== */
 let state = JSON.parse(localStorage.getItem(STORAGE)) || {
   daily:0,
   monthly:0,
@@ -217,12 +207,10 @@ let state = JSON.parse(localStorage.getItem(STORAGE)) || {
   }
 };
 
-/* ===== SAVE ===== */
 function save(){
   localStorage.setItem(STORAGE,JSON.stringify(state));
 }
 
-/* ===== COUNT ===== */
 function get(){
   if(!state.running||!state.start)return state;
 
@@ -236,7 +224,6 @@ function get(){
   };
 }
 
-/* ===== UI ===== */
 function ui(){
 
   let c=get();
@@ -259,13 +246,11 @@ function ui(){
   checkStage(c.total);
 }
 
-/* ===== CLOCK ===== */
 function clock(){
   document.getElementById("clock").innerText=
     new Date().toLocaleString();
 }
 
-/* ===== START ===== */
 function toggle(){
 
   state.perMinute=+document.getElementById("perMinute").value||60;
@@ -290,19 +275,20 @@ function toggle(){
   save();
 }
 
-/* ===== 1日 ===== */
+/* ===== ⭐ ここが修正ポイント ===== */
 function checkGoal(c){
 
   let goal=+document.getElementById("goal").value||1;
 
   if(c.daily>=goal && !state.goalDone){
     state.goalDone=true;
-    add("🌅 1日達成！");
+
+    add("🌅 1日目標達成おめでとうございます(^^♪今日は自分を褒め称えてくださいね。明日も地道に頑張りましょう(^_-)-☆");
+
     save();
   }
 }
 
-/* ===== 段階演出 ===== */
 function checkStage(t){
 
   let s=state.stage;
@@ -323,7 +309,6 @@ function checkStage(t){
   save();
 }
 
-/* ===== ADD ===== */
 function add(text){
   let d=document.createElement("div");
   d.className="achievement";
@@ -331,12 +316,12 @@ function add(text){
   document.getElementById("achievement").prepend(d);
 }
 
-/* ===== RESET ===== */
 function resetDay(){state.daily=0;save();}
 function resetMonth(){state.monthly=0;save();}
 function resetTotal(){state.total=0;save();}
 
 /* ===== PRAYER ===== */
+
 function openPrayer(){
   document.getElementById("main").classList.add("hidden");
   document.getElementById("prayerPage").classList.remove("hidden");
@@ -348,7 +333,6 @@ function back(){
   document.getElementById("prayerPage").classList.add("hidden");
 }
 
-/* ===== SAVE PRAYER ===== */
 function savePrayer(){
 
   let t=document.getElementById("text").value.trim();
@@ -368,7 +352,6 @@ function savePrayer(){
   render();
 }
 
-/* ===== RENDER ===== */
 function render(){
 
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
@@ -386,10 +369,7 @@ function render(){
     d.innerHTML=`
       <div>${x.d}</div>
       <div>🙏 ${x.t}</div>
-
-      <button onclick="toggleOk(${i})"
-      style="color:${x.ok?'red':'black'}">◎</button>
-
+      <button onclick="toggleOk(${i})" style="color:${x.ok?'red':'black'}">◎</button>
       <button onclick="deletePrayer(${i})">削除</button>
     `;
 
@@ -397,7 +377,6 @@ function render(){
   });
 }
 
-/* ===== ◎ ===== */
 function toggleOk(i){
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
   list[i].ok=!list[i].ok;
@@ -405,7 +384,6 @@ function toggleOk(i){
   render();
 }
 
-/* ===== DELETE ===== */
 function deletePrayer(i){
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
   list.splice(i,1);
@@ -414,6 +392,7 @@ function deletePrayer(i){
 }
 
 /* ===== SPACE ===== */
+
 function triggerSpace(){
 
   let space=document.getElementById("space");
@@ -432,7 +411,7 @@ function triggerSpace(){
   }
 }
 
-/* ===== LOOP ===== */
+/* LOOP */
 setInterval(()=>{
   clock();
   ui();
