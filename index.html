@@ -27,9 +27,9 @@ h1{
 
 button{
   border:none;
-  padding:12px 14px;
-  border-radius:12px;
-  margin:5px;
+  padding:10px 12px;
+  border-radius:10px;
+  margin:4px;
   font-weight:bold;
   cursor:pointer;
 }
@@ -70,12 +70,19 @@ input,textarea{
   animation:pop .4s ease;
 }
 
+.historyItem{
+  padding:10px;
+  margin-top:10px;
+  background:#f5f5f5;
+  border-radius:12px;
+}
+
 @keyframes pop{
   0%{transform:scale(.7);opacity:0;}
   100%{transform:scale(1);opacity:1;}
 }
 
-/* ===== 宇宙MVモード ===== */
+/* ===== 宇宙MV ===== */
 #space{
   position:fixed;
   inset:0;
@@ -104,15 +111,9 @@ input,textarea{
   left:50%;
   transform:translate(-50%,-50%);
   color:white;
-  font-size:30px;
+  font-size:28px;
   font-weight:bold;
   text-align:center;
-  animation:fade 2s ease;
-}
-
-@keyframes fade{
-  0%{opacity:0;transform:translate(-50%,-60%);}
-  100%{opacity:1;transform:translate(-50%,-50%);}
 }
 </style>
 </head>
@@ -166,7 +167,7 @@ input,textarea{
 
 </div>
 
-<!-- ===== PRAYER ===== -->
+<!-- ===== PRAYER PAGE ===== -->
 <div id="prayerPage" class="hidden">
 
 <div class="card">
@@ -174,8 +175,8 @@ input,textarea{
 
 <textarea id="text" maxlength="300" rows="5"></textarea>
 
-<button class="navBtn" onclick="back()">戻る</button>
 <button class="startBtn" onclick="savePrayer()">保存</button>
+<button class="navBtn" onclick="back()">戻る</button>
 </div>
 
 <div class="card">
@@ -185,17 +186,17 @@ input,textarea{
 
 </div>
 
-<!-- ===== SPACE MV ===== -->
+<!-- ===== SPACE ===== -->
 <div id="space">
   <div class="mvText">🏆 1,000,000達成<br>DAYDREAM 完全覚醒</div>
 </div>
 
 <script>
 
-const STORAGE="dx_daydream_v1";
+const STORAGE="dx_v1";
 const PRAYER="dx_prayer_v1";
 
-/* ===== STATE（永続） ===== */
+/* ===== STATE ===== */
 let state = JSON.parse(localStorage.getItem(STORAGE)) || {
   daily:0,
   monthly:0,
@@ -289,14 +290,14 @@ function toggle(){
   save();
 }
 
-/* ===== 1日達成 ===== */
+/* ===== 1日 ===== */
 function checkGoal(c){
 
   let goal=+document.getElementById("goal").value||1;
 
   if(c.daily>=goal && !state.goalDone){
     state.goalDone=true;
-    add("🌅 1日目標達成！");
+    add("🌅 1日達成！");
     save();
   }
 }
@@ -306,16 +307,16 @@ function checkStage(t){
 
   let s=state.stage;
 
-  if(t>=10000&&!s[10000]){s[10000]=true;add("🥁 大地：スタート！");}
-  if(t>=50000&&!s[50000]){s[50000]=true;add("🎀 葵：いい感じ！");}
-  if(t>=100000&&!s[100000]){s[100000]=true;add("🎸 蓮：成長中！");}
-  if(t>=200000&&!s[200000]){s[200000]=true;add("🎤 結衣：すごい！");}
-  if(t>=500000&&!s[500000]){s[500000]=true;add("🎹 悠真：本物だね");}
-  if(t>=700000&&!s[700000]){s[700000]=true;add("🌌 全員：もうすぐ頂点");}
+  if(t>=10000&&!s[10000]){s[10000]=true;add("🥁 大地：スタート");}
+  if(t>=50000&&!s[50000]){s[50000]=true;add("🎀 葵：いい感じ");}
+  if(t>=100000&&!s[100000]){s[100000]=true;add("🎸 蓮：成長中");}
+  if(t>=200000&&!s[200000]){s[200000]=true;add("🎤 結衣：すごい");}
+  if(t>=500000&&!s[500000]){s[500000]=true;add("🎹 悠真：本物");}
+  if(t>=700000&&!s[700000]){s[700000]=true;add("🌌 もうすぐ100万");}
 
   if(t>=1000000&&!s[1000000]){
     s[1000000]=true;
-    add("🏆 完全覚醒！！");
+    add("🏆 完全覚醒");
     triggerSpace();
   }
 
@@ -355,12 +356,15 @@ function savePrayer(){
 
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
 
-  list.unshift({d:new Date().toLocaleString(),t});
+  list.unshift({
+    d:new Date().toLocaleString(),
+    t:t,
+    ok:false
+  });
 
   localStorage.setItem(PRAYER,JSON.stringify(list));
 
   document.getElementById("text").value="";
-
   render();
 }
 
@@ -374,30 +378,52 @@ function render(){
 
   el.innerHTML="";
 
-  list.forEach(x=>{
+  list.forEach((x,i)=>{
+
     let d=document.createElement("div");
-    d.className="achievement";
-    d.innerHTML=`${x.d}<br>🙏 ${x.t}`;
+    d.className="historyItem";
+
+    d.innerHTML=`
+      <div>${x.d}</div>
+      <div>🙏 ${x.t}</div>
+
+      <button onclick="toggleOk(${i})"
+      style="color:${x.ok?'red':'black'}">◎</button>
+
+      <button onclick="deletePrayer(${i})">削除</button>
+    `;
+
     el.appendChild(d);
   });
 }
 
-/* ===== SPACE MV ===== */
+/* ===== ◎ ===== */
+function toggleOk(i){
+  let list=JSON.parse(localStorage.getItem(PRAYER))||[];
+  list[i].ok=!list[i].ok;
+  localStorage.setItem(PRAYER,JSON.stringify(list));
+  render();
+}
+
+/* ===== DELETE ===== */
+function deletePrayer(i){
+  let list=JSON.parse(localStorage.getItem(PRAYER))||[];
+  list.splice(i,1);
+  localStorage.setItem(PRAYER,JSON.stringify(list));
+  render();
+}
+
+/* ===== SPACE ===== */
 function triggerSpace(){
 
   let space=document.getElementById("space");
-
   space.style.display="block";
 
   for(let i=0;i<120;i++){
-
     let s=document.createElement("div");
     s.className="star";
-
     s.style.left=Math.random()*100+"vw";
-    s.style.top=Math.random()*100+"vh";
     s.style.animationDuration=(Math.random()*3+2)+"s";
-
     space.appendChild(s);
   }
 
