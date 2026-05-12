@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>題目カウンター DayDreamプラス DX+</title>
 
+<!-- 📄 PDFライブラリ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
 body{
   margin:0;
@@ -13,9 +16,7 @@ body{
   background:linear-gradient(135deg,#ffb6f9,#b5d7ff,#ffe59e);
 }
 
-h1{
-  text-align:center;
-}
+h1{text-align:center;}
 
 .card{
   background:#fff;
@@ -82,7 +83,7 @@ input,textarea{
   100%{transform:scale(1);opacity:1;}
 }
 
-/* ===== 宇宙MV ===== */
+/* 🌌 宇宙MV */
 #space{
   position:fixed;
   inset:0;
@@ -122,52 +123,63 @@ input,textarea{
 
 <h1>🌈 題目カウンター DayDreamプラス DX+</h1>
 
+<!-- ===== MAIN ===== -->
 <div id="main">
 
 <div class="card">
-<div>⏰ 現在: <span id="clock"></span></div>
-<div>🚀 開始: <span id="startTime">未開始</span></div>
+<div>⏰ <span id="clock"></span></div>
+<div>🚀 <span id="startTime">未開始</span></div>
 <hr>
-<div>📅 日: <span id="daily"></span></div>
-<div>🗓️ 月: <span id="monthly"></span></div>
-<div>🏆 総: <span id="total"></span></div>
+<div>📅 日 <span id="daily">0</span></div>
+<div>🗓️ 月 <span id="monthly">0</span></div>
+<div>🏆 総 <span id="total">0</span></div>
 </div>
 
 <div class="card">
-<button class="startBtn" onclick="toggle()" id="btn">▶ 自動開始</button>
-<button class="resetBtn" onclick="resetDay()">📅 日リセット</button>
-<button class="resetBtn" onclick="resetMonth()">🗓️ 月リセット</button>
-<button class="resetBtn" onclick="resetTotal()">🏆 総リセット</button>
-<button class="navBtn" onclick="openPrayer()">🙏 御祈念</button>
+
+<button class="startBtn" onclick="toggle()" id="btn">▶開始</button>
+
+<button class="resetBtn" onclick="resetDay()">日リセット</button>
+<button class="resetBtn" onclick="resetMonth()">月リセット</button>
+<button class="resetBtn" onclick="resetTotal()">総リセット</button>
+
+<button class="navBtn" onclick="openPrayer()">🙏御祈念</button>
+
 </div>
 
 <div class="card">
+
 <label>1分あたり</label>
 <input id="perMinute" type="number" value="60">
 
-<label>1日目標</label>
+<label>目標</label>
 <input id="goal" type="number" value="3000">
 
-<div>達成率: <span id="percent">0</span>%</div>
-
+<div>達成率 <span id="percent">0</span>%</div>
 <div class="bar"><div class="fill" id="fill"></div></div>
+
 </div>
 
 <div class="card">
-<h3>🌈 DayDream演出</h3>
+<h3>🌈 演出</h3>
 <div id="achievement"></div>
 </div>
 
 </div>
 
-<!-- PRAYER -->
+<!-- ===== PRAYER ===== -->
 <div id="prayerPage" class="hidden">
 
 <div class="card">
 <h2>🙏 御祈念</h2>
+
 <textarea id="text" maxlength="300" rows="5"></textarea>
+
 <button class="startBtn" onclick="savePrayer()">保存</button>
+<button class="navBtn" onclick="shareText()">📤共有</button>
+<button class="startBtn" onclick="downloadPDF()">📄PDF</button>
 <button class="navBtn" onclick="back()">戻る</button>
+
 </div>
 
 <div class="card">
@@ -177,7 +189,7 @@ input,textarea{
 
 </div>
 
-<!-- SPACE -->
+<!-- ===== SPACE ===== -->
 <div id="space">
   <div class="mvText">🏆 1,000,000達成<br>DAYDREAM 完全覚醒</div>
 </div>
@@ -187,7 +199,8 @@ input,textarea{
 const STORAGE="dx_v1";
 const PRAYER="dx_prayer_v1";
 
-let state = JSON.parse(localStorage.getItem(STORAGE)) || {
+/* ===== STATE ===== */
+let state=JSON.parse(localStorage.getItem(STORAGE))||{
   daily:0,
   monthly:0,
   total:0,
@@ -196,21 +209,15 @@ let state = JSON.parse(localStorage.getItem(STORAGE)) || {
   running:false,
   perMinute:60,
   goalDone:false,
-  stage:{
-    10000:false,
-    50000:false,
-    100000:false,
-    200000:false,
-    500000:false,
-    700000:false,
-    1000000:false
-  }
+  stage:{10000:false,50000:false,100000:false,200000:false,500000:false,700000:false,1000000:false}
 };
 
+/* ===== SAVE ===== */
 function save(){
   localStorage.setItem(STORAGE,JSON.stringify(state));
 }
 
+/* ===== COUNT ===== */
 function get(){
   if(!state.running||!state.start)return state;
 
@@ -224,140 +231,124 @@ function get(){
   };
 }
 
+/* ===== UI ===== */
 function ui(){
 
   let c=get();
 
-  document.getElementById("daily").innerText=Math.floor(c.daily);
-  document.getElementById("monthly").innerText=Math.floor(c.monthly);
-  document.getElementById("total").innerText=Math.floor(c.total);
+  daily.textContent=Math.floor(c.daily);
+  monthly.textContent=Math.floor(c.monthly);
+  total.textContent=Math.floor(c.total);
 
-  document.getElementById("startTime").innerText=
-    state.fixedStart?
-    new Date(state.fixedStart).toLocaleString():"未開始";
+  startTime.textContent=
+    state.fixedStart?new Date(state.fixedStart).toLocaleString():"未開始";
 
   let goal=+document.getElementById("goal").value||1;
   let p=Math.min(100,Math.floor(c.daily/goal*100));
 
-  document.getElementById("percent").innerText=p;
-  document.getElementById("fill").style.width=p+"%";
+  percent.textContent=p;
+  fill.style.width=p+"%";
 
-  checkGoal(c);
   checkStage(c.total);
 }
 
-function clock(){
-  document.getElementById("clock").innerText=
-    new Date().toLocaleString();
-}
+/* ===== CLOCK ===== */
+setInterval(()=>{
+  clock.textContent=new Date().toLocaleString();
+  ui();
+},1000);
 
+/* ===== START ===== */
 function toggle(){
 
-  state.perMinute=+document.getElementById("perMinute").value||60;
+  state.perMinute=+perMinute.value;
 
   if(!state.running){
     state.running=true;
     state.start=Date.now();
     state.fixedStart=Date.now();
-    document.getElementById("btn").innerText="⏹停止";
+    btn.textContent="停止";
   }else{
 
     let c=get();
-
     state.daily=c.daily;
     state.monthly=c.monthly;
     state.total=c.total;
 
     state.running=false;
-    document.getElementById("btn").innerText="▶自動開始";
+    btn.textContent="開始";
   }
 
   save();
 }
 
-/* ===== ⭐ ここが修正ポイント ===== */
-function checkGoal(c){
-
-  let goal=+document.getElementById("goal").value||1;
-
-  if(c.daily>=goal && !state.goalDone){
-    state.goalDone=true;
-
-    add("🌅 1日目標達成おめでとうございます(^^♪今日は自分を褒め称えてくださいね。明日も地道に頑張りましょう(^_-)-☆");
-
-    save();
-  }
-}
-
+/* ===== STAGE ===== */
 function checkStage(t){
 
   let s=state.stage;
 
-  if(t>=10000&&!s[10000]){s[10000]=true;add("🥁 大地：スタート");}
-  if(t>=50000&&!s[50000]){s[50000]=true;add("🎀 葵：いい感じ");}
-  if(t>=100000&&!s[100000]){s[100000]=true;add("🎸 蓮：成長中");}
-  if(t>=200000&&!s[200000]){s[200000]=true;add("🎤 結衣：すごい");}
-  if(t>=500000&&!s[500000]){s[500000]=true;add("🎹 悠真：本物");}
-  if(t>=700000&&!s[700000]){s[700000]=true;add("🌌 もうすぐ100万");}
+  if(t>=10000&&!s[10000]){s[10000]=true;add("🥁大地");}
+  if(t>=50000&&!s[50000]){s[50000]=true;add("🎀葵");}
+  if(t>=100000&&!s[100000]){s[100000]=true;add("🎸蓮");}
+  if(t>=200000&&!s[200000]){s[200000]=true;add("🎤結衣");}
+  if(t>=500000&&!s[500000]){s[500000]=true;add("🎹悠真");}
+  if(t>=700000&&!s[700000]){s[700000]=true;add("🌌接近");}
 
   if(t>=1000000&&!s[1000000]){
     s[1000000]=true;
-    add("🏆 完全覚醒");
-    triggerSpace();
+    add("🏆覚醒");
+    spaceMode();
   }
 
   save();
 }
 
-function add(text){
+/* ===== ADD ===== */
+function add(t){
   let d=document.createElement("div");
   d.className="achievement";
-  d.innerText=text;
-  document.getElementById("achievement").prepend(d);
+  d.textContent=t;
+  achievement.prepend(d);
 }
 
+/* ===== RESET ===== */
 function resetDay(){state.daily=0;save();}
 function resetMonth(){state.monthly=0;save();}
 function resetTotal(){state.total=0;save();}
 
 /* ===== PRAYER ===== */
-
 function openPrayer(){
-  document.getElementById("main").classList.add("hidden");
-  document.getElementById("prayerPage").classList.remove("hidden");
+  main.classList.add("hidden");
+  prayerPage.classList.remove("hidden");
   render();
 }
 
 function back(){
-  document.getElementById("main").classList.remove("hidden");
-  document.getElementById("prayerPage").classList.add("hidden");
+  main.classList.remove("hidden");
+  prayerPage.classList.add("hidden");
 }
 
+/* ===== SAVE PRAYER ===== */
 function savePrayer(){
 
-  let t=document.getElementById("text").value.trim();
+  let t=text.value.trim();
   if(!t)return;
 
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
 
-  list.unshift({
-    d:new Date().toLocaleString(),
-    t:t,
-    ok:false
-  });
+  list.unshift({d:new Date().toLocaleString(),t,ok:false});
 
   localStorage.setItem(PRAYER,JSON.stringify(list));
 
-  document.getElementById("text").value="";
+  text.value="";
   render();
 }
 
+/* ===== RENDER ===== */
 function render(){
 
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
   let el=document.getElementById("list");
-
-  if(list.length===0){el.innerHTML="なし";return;}
 
   el.innerHTML="";
 
@@ -369,14 +360,16 @@ function render(){
     d.innerHTML=`
       <div>${x.d}</div>
       <div>🙏 ${x.t}</div>
-      <button onclick="toggleOk(${i})" style="color:${x.ok?'red':'black'}">◎</button>
-      <button onclick="deletePrayer(${i})">削除</button>
+
+      <button onclick="toggleOk(${i})" style="color:${x.ok?'red':''}">◎</button>
+      <button onclick="del(${i})">削除</button>
     `;
 
     el.appendChild(d);
   });
 }
 
+/* ===== ◎ ===== */
 function toggleOk(i){
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
   list[i].ok=!list[i].ok;
@@ -384,42 +377,70 @@ function toggleOk(i){
   render();
 }
 
-function deletePrayer(i){
+/* ===== DELETE ===== */
+function del(i){
   let list=JSON.parse(localStorage.getItem(PRAYER))||[];
   list.splice(i,1);
   localStorage.setItem(PRAYER,JSON.stringify(list));
   render();
 }
 
-/* ===== SPACE ===== */
+/* ===== SHARE ===== */
+function shareText(){
 
-function triggerSpace(){
+  let list=JSON.parse(localStorage.getItem(PRAYER))||[];
 
-  let space=document.getElementById("space");
-  space.style.display="block";
+  let txt="🙏御祈念\n\n";
 
-  for(let i=0;i<120;i++){
-    let s=document.createElement("div");
-    s.className="star";
-    s.style.left=Math.random()*100+"vw";
-    s.style.animationDuration=(Math.random()*3+2)+"s";
-    space.appendChild(s);
-  }
+  list.forEach(x=>{
+    txt+=x.d+"\n"+x.t+"\n\n";
+  });
 
-  if(space.requestFullscreen){
-    space.requestFullscreen();
+  if(navigator.share){
+    navigator.share({text:txt});
+  }else{
+    navigator.clipboard.writeText(txt);
+    alert("コピーしました");
   }
 }
 
-/* LOOP */
-setInterval(()=>{
-  clock();
-  ui();
-},1000);
+/* ===== PDF ===== */
+function downloadPDF(){
 
-clock();
-ui();
-render();
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+
+  let list=JSON.parse(localStorage.getItem(PRAYER))||[];
+
+  let y=10;
+
+  doc.text("DayDream御祈念",10,y);
+  y+=10;
+
+  list.forEach(x=>{
+    doc.text(String(x.d),10,y);y+=7;
+    doc.text(String(x.t),10,y);y+=10;
+  });
+
+  doc.save("prayer.pdf");
+}
+
+/* ===== SPACE ===== */
+function spaceMode(){
+
+  let s=document.getElementById("space");
+  s.style.display="block";
+
+  for(let i=0;i<120;i++){
+    let star=document.createElement("div");
+    star.className="star";
+    star.style.left=Math.random()*100+"vw";
+    star.style.animationDuration=(Math.random()*3+2)+"s";
+    s.appendChild(star);
+  }
+
+  if(s.requestFullscreen)s.requestFullscreen();
+}
 
 </script>
 
