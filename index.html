@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>題目カウンター DayDreamプラス DX+ 翻訳対応完全版</title>
+<title>題目カウンター DayDreamプラス DX+</title>
 
 <style>
+
 body{
   margin:0;
   font-family:sans-serif;
@@ -43,10 +44,25 @@ button{
   font-size:14px;
 }
 
-.startBtn{background:#00c853;color:white;}
-.resetBtn{background:#ff7043;color:white;}
-.navBtn{background:#7c4dff;color:white;}
-.quizBtn{background:#00acc1;color:white;}
+.startBtn{
+  background:#00c853;
+  color:white;
+}
+
+.resetBtn{
+  background:#ff7043;
+  color:white;
+}
+
+.navBtn{
+  background:#7c4dff;
+  color:white;
+}
+
+.quizBtn{
+  background:#00acc1;
+  color:white;
+}
 
 input,textarea{
   width:100%;
@@ -101,18 +117,30 @@ input,textarea{
 }
 
 @keyframes move{
-  from{transform:translateY(0);opacity:1;}
-  to{transform:translateY(800px);opacity:0;}
+  from{
+    transform:translateY(0);
+    opacity:1;
+  }
+  to{
+    transform:translateY(800px);
+    opacity:0;
+  }
 }
 
-.flash{animation:flash 0.6s infinite;}
+.flash{
+  animation:flash 0.6s infinite;
+}
+
 @keyframes flash{
   0%{filter:brightness(1);}
   50%{filter:brightness(1.8);}
   100%{filter:brightness(1);}
 }
 
-.shake{animation:shake 0.3s infinite;}
+.shake{
+  animation:shake 0.3s infinite;
+}
+
 @keyframes shake{
   0%{transform:translate(0,0);}
   25%{transform:translate(2px,1px);}
@@ -121,7 +149,6 @@ input,textarea{
   100%{transform:translate(0,0);}
 }
 
-/* クイズ */
 .quizItem{
   background:#f7fbff;
   border-radius:12px;
@@ -135,20 +162,6 @@ input,textarea{
   line-height:1.7;
 }
 
-.quizMeta{
-  font-size:12px;
-  color:#666;
-  margin-bottom:6px;
-}
-
-.quizOriginal{
-  font-size:12px;
-  color:#777;
-  margin-top:6px;
-  line-height:1.5;
-  word-break:break-word;
-}
-
 .choiceBtn{
   display:block;
   width:100%;
@@ -160,15 +173,6 @@ input,textarea{
   border-radius:12px;
   padding:12px;
   font-weight:bold;
-}
-
-.choiceBtn:hover{
-  background:#dff1ff;
-}
-
-.choiceBtn.selected{
-  border-color:#00acc1;
-  background:#b2ebf2;
 }
 
 .choiceBtn.correct{
@@ -190,51 +194,17 @@ input,textarea{
   line-height:1.7;
 }
 
-.loadingBox{
-  margin-top:10px;
-  padding:12px;
-  border-radius:12px;
-  background:#e3f2fd;
-  font-weight:bold;
-}
-
-.smallNote{
-  font-size:12px;
-  color:#555;
-  margin-top:6px;
-}
-
-.translatedBadge{
-  display:inline-block;
-  padding:3px 8px;
-  border-radius:999px;
-  background:#e1f5fe;
-  color:#0277bd;
-  font-size:11px;
-  font-weight:bold;
-  margin-right:6px;
-}
-
-.originalToggle{
-  font-size:12px;
-  color:#1565c0;
-  cursor:pointer;
-  text-decoration:underline;
-  margin-top:4px;
-  display:inline-block;
-}
-
 .timeMeta{
   font-size:12px;
   color:#555;
   margin-top:6px;
-  line-height:1.5;
 }
 
 .inlineTime{
   display:inline-block;
   margin-right:10px;
 }
+
 </style>
 </head>
 
@@ -248,83 +218,134 @@ input,textarea{
 
 <div id="main">
 
-  <div class="card">
-    ⏰ <span id="clock"></span><br>
-    🚀 開始: <span id="startTime">未開始</span><br>
-    📅 日: <span id="daily">0</span><br>
-    🗓️ 月: <span id="monthly">0</span><br>
-    🏆 総: <span id="total">0</span><br>
-    🧠 クイズ最高点: <span id="homeBestScore">0</span> / 5
-  </div>
+<div class="card">
+⏰ <span id="clock"></span><br>
 
-  <div class="card">
-    <button class="startBtn" onclick="toggle()" id="btn">▶開始</button>
-    <button class="resetBtn" onclick="resetDay()">日リセット</button>
-    <button class="resetBtn" onclick="resetMonth()">月リセット</button>
-    <button class="resetBtn" onclick="resetTotal()">総リセット</button>
-    <button class="navBtn" onclick="openPrayer()">御祈念</button>
-    <button class="quizBtn" onclick="openQuiz()">🧠脳スッキリクイズ</button>
-  </div>
+🚀 開始:
+<span id="startTime">未開始</span><br>
 
-  <div class="card">
-    1分あたり
-    <input id="per" type="number" value="60">
+📅 日:
+<span id="daily">0</span><br>
 
-    1日の目標
-    <input id="goal" type="number" value="3000">
+🗓️ 月:
+<span id="monthly">0</span><br>
 
-    達成率 <span id="percent">0</span>%
+🏆 総:
+<span id="total">0</span><br>
 
-    <div class="bar"><div class="fill" id="fill"></div></div>
-  </div>
+🧠 クイズ最高点:
+<span id="bestScore">0</span>/5
+</div>
 
-  <div class="card">
-    <h3>🌈 段階演出</h3>
-    <div id="ach"></div>
-  </div>
+<div class="card">
+
+<button class="startBtn" onclick="toggle()" id="btn">
+▶開始
+</button>
+
+<button class="resetBtn" onclick="resetDay()">
+日リセット
+</button>
+
+<button class="resetBtn" onclick="resetMonth()">
+月リセット
+</button>
+
+<button class="resetBtn" onclick="resetTotal()">
+総リセット
+</button>
+
+<button class="navBtn" onclick="openPrayer()">
+御祈念
+</button>
+
+<button class="quizBtn" onclick="openQuiz()">
+🧠クイズ
+</button>
+
+</div>
+
+<div class="card">
+
+1分あたり
+<input id="per" type="number" value="60">
+
+1日の目標
+<input id="goal" type="number" value="3000">
+
+達成率
+<span id="percent">0</span>%
+
+<div class="bar">
+<div class="fill" id="fill"></div>
+</div>
+
+</div>
+
+<div class="card">
+<h3>🌈 段階演出</h3>
+<div id="ach"></div>
+</div>
 
 </div>
 
 <!-- 御祈念 -->
+
 <div id="prayerPage" style="display:none">
-  <div class="card">
-    <h3>🙏御祈念</h3>
 
-    <textarea id="prayer" maxlength="300" placeholder="御祈念内容を入力"></textarea>
+<div class="card">
 
-    <button class="startBtn" onclick="savePrayer()">保存</button>
-    <button class="navBtn" onclick="backHome()">戻る</button>
+<h3>🙏御祈念</h3>
 
-    <div id="prayerList"></div>
-  </div>
+<textarea
+id="prayer"
+maxlength="300"
+placeholder="御祈念内容を入力"></textarea>
+
+<button class="startBtn" onclick="savePrayer()">
+保存
+</button>
+
+<button class="navBtn" onclick="backHome()">
+戻る
+</button>
+
+<div id="prayerList"></div>
+
+</div>
 </div>
 
 <!-- クイズ -->
+
 <div id="quizPage" style="display:none">
-  <div class="card">
-    <h3>🧠 脳スッキリクイズ</h3>
-    <p>毎回ランダムで5問出題されます。</p>
 
-    <div id="quizSourceInfo" class="ach"></div>
-    <div id="quizScoreBoard" class="ach"></div>
-    <div id="quizDuplicateInfo" class="ach"></div>
-    <div id="quizList"></div>
+<div class="card">
 
-    <button class="startBtn" onclick="submitQuiz()">答え合わせ</button>
-    <button class="quizBtn" onclick="generateQuiz()">問題を作り直す</button>
-    <button class="resetBtn" onclick="resetQuizScore()">スコアリセット</button>
-    <button class="resetBtn" onclick="resetQuizHistory()">重複履歴リセット</button>
-    <button class="navBtn" onclick="backHome()">戻る</button>
+<h3>🧠 脳スッキリクイズ</h3>
 
-    <div id="quizResult"></div>
-    <div class="smallNote">
-      ※ 重複回避: Session Token + 履歴チェック + 同回重複排除 + 翻訳キャッシュ
-    </div>
-  </div>
+<div id="quizList"></div>
+
+<button class="startBtn" onclick="submitQuiz()">
+答え合わせ
+</button>
+
+<button class="quizBtn" onclick="generateQuiz()">
+問題変更
+</button>
+
+<button class="navBtn" onclick="backHome()">
+戻る
+</button>
+
+<div id="quizResult"></div>
+
+</div>
 </div>
 
 <script>
+
 /* ================= DOM ================= */
+
 const main = document.getElementById("main");
 const prayerPage = document.getElementById("prayerPage");
 const prayerList = document.getElementById("prayerList");
@@ -333,85 +354,66 @@ const prayer = document.getElementById("prayer");
 const quizPage = document.getElementById("quizPage");
 const quizList = document.getElementById("quizList");
 const quizResult = document.getElementById("quizResult");
-const quizScoreBoard = document.getElementById("quizScoreBoard");
-const quizSourceInfo = document.getElementById("quizSourceInfo");
-const quizDuplicateInfo = document.getElementById("quizDuplicateInfo");
-const homeBestScore = document.getElementById("homeBestScore");
 
 const clock = document.getElementById("clock");
 const startTime = document.getElementById("startTime");
+
 const daily = document.getElementById("daily");
 const monthly = document.getElementById("monthly");
 const total = document.getElementById("total");
+
 const btn = document.getElementById("btn");
+
 const per = document.getElementById("per");
 const goal = document.getElementById("goal");
+
 const percent = document.getElementById("percent");
 const fill = document.getElementById("fill");
+
+const bestScore = document.getElementById("bestScore");
+
 const space = document.getElementById("space");
 
-/* ================= 日本時間（JST） ================= */
+/* ================= JST ================= */
+
 const JST_TIME_ZONE = "Asia/Tokyo";
 
-const jstDateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
-  timeZone: JST_TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: false
-});
-
-const jstTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
-  timeZone: JST_TIME_ZONE,
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: false
+const jstDateTimeFormatter =
+new Intl.DateTimeFormat("ja-JP",{
+  timeZone:JST_TIME_ZONE,
+  year:"numeric",
+  month:"2-digit",
+  day:"2-digit",
+  hour:"2-digit",
+  minute:"2-digit",
+  second:"2-digit",
+  hour12:false
 });
 
 function formatJSTDateTime(value){
+
   if(!value) return "未開始";
-  const d = value instanceof Date ? value : new Date(value);
-  return jstDateTimeFormatter.format(d) + " JST";
+
+  const d =
+    value instanceof Date
+    ? value
+    : new Date(value);
+
+  return jstDateTimeFormatter.format(d)
+    + " JST";
 }
 
-function formatJSTTime(value){
-  const d = value instanceof Date ? value : new Date(value);
-  return jstTimeFormatter.format(d) + " JST";
-}
+/* ================= 保存キー ================= */
 
-function createTimePair(){
-  const now = Date.now();
-  return {
-    sentAt: formatJSTTime(now),
-    receivedAt: formatJSTTime(now),
-    fullDateTime: formatJSTDateTime(now)
-  };
-}
-
-function buildTimeMetaHTML(sentAt, receivedAt){
-  return `
-    <div class="timeMeta">
-      <span class="inlineTime">📤送信: ${sentAt}</span>
-      <span class="inlineTime">📥受信: ${receivedAt}</span>
-    </div>
-  `;
-}
-
-/* ================= 永続キー ================= */
-const KEY = "dx_all_final_v3";
-const PRAY = "dx_pray_final_v3";
-const QUIZ_SCORE_KEY = "dx_quiz_score_v3";
-const QUIZ_TOKEN_KEY = "dx_quiz_token_v3";
-const QUIZ_TOKEN_TIME_KEY = "dx_quiz_token_time_v3";
-const QUIZ_HISTORY_KEY = "dx_quiz_history_v3";
-const QUIZ_TRANSLATION_CACHE_KEY = "dx_quiz_translation_cache_v1";
+const KEY = "dx_all_final_v5";
+const PRAY = "dx_pray_final_v5";
+const QUIZ = "dx_quiz_score_v5";
 
 /* ================= 状態 ================= */
-let state = JSON.parse(localStorage.getItem(KEY)) || {
+
+let state =
+JSON.parse(localStorage.getItem(KEY))
+||{
   daily:0,
   monthly:0,
   total:0,
@@ -422,138 +424,121 @@ let state = JSON.parse(localStorage.getItem(KEY)) || {
   done:false
 };
 
-let quizScore = JSON.parse(localStorage.getItem(QUIZ_SCORE_KEY)) || {
-  plays:0,
-  totalCorrect:0,
-  best:0,
-  last:0
+let quizScore =
+JSON.parse(localStorage.getItem(QUIZ))
+||{
+  best:0
 };
 
-let quizToken = localStorage.getItem(QUIZ_TOKEN_KEY) || "";
-let quizTokenTime = Number(localStorage.getItem(QUIZ_TOKEN_TIME_KEY) || 0);
-
-let translationCache = loadTranslationCache();
+let stage = {};
 
 let quizData = [];
 let quizSelections = [];
 let quizAnswered = false;
-let quizLoading = false;
-let quizSource = "internet";
-let duplicateStats = {
-  historySkipped: 0,
-  currentSkipped: 0,
-  fetchedTotal: 0,
-  translatedCount: 0,
-  mode: "internet"
-};
-
-let lastTriviaApiCallAt = 0;
-let lastTranslateCallAt = 0;
 
 /* ================= 保存 ================= */
+
 function save(){
-  localStorage.setItem(KEY, JSON.stringify(state));
+  localStorage.setItem(KEY,JSON.stringify(state));
 }
 
-function saveQuizScore(){
-  localStorage.setItem(QUIZ_SCORE_KEY, JSON.stringify(quizScore));
+function saveQuiz(){
+  localStorage.setItem(QUIZ,JSON.stringify(quizScore));
 }
 
-function saveQuizToken(){
-  localStorage.setItem(QUIZ_TOKEN_KEY, quizToken || "");
-  localStorage.setItem(QUIZ_TOKEN_TIME_KEY, String(quizTokenTime || 0));
+/* ================= 時間 ================= */
+
+function createTimePair(){
+
+  const now = Date.now();
+
+  return{
+    sentAt:formatJSTDateTime(now),
+    receivedAt:formatJSTDateTime(now)
+  };
 }
 
-function loadTranslationCache(){
-  try{
-    const data = JSON.parse(localStorage.getItem(QUIZ_TRANSLATION_CACHE_KEY) || "{}");
-    return (data && typeof data === "object") ? data : {};
-  }catch(e){
-    return {};
-  }
-}
+function buildTimeMetaHTML(sentAt,receivedAt){
 
-function saveTranslationCache(){
-  try{
-    const keys = Object.keys(translationCache);
-    if(keys.length > 500){
-      const sliced = {};
-      keys.slice(-500).forEach(k => sliced[k] = translationCache[k]);
-      translationCache = sliced;
-    }
-    localStorage.setItem(QUIZ_TRANSLATION_CACHE_KEY, JSON.stringify(translationCache));
-  }catch(e){}
-}
+  return `
+  <div class="timeMeta">
+    <span class="inlineTime">
+      📤送信: ${sentAt}
+    </span>
 
-/* ================= 履歴 ================= */
-function loadQuizHistory(){
-  try{
-    const data = JSON.parse(localStorage.getItem(QUIZ_HISTORY_KEY) || "[]");
-    return Array.isArray(data) ? data : [];
-  }catch(e){
-    return [];
-  }
-}
-
-function saveQuizHistory(history){
-  const unique = [];
-  const seen = new Set();
-  for(let i = history.length - 1; i >= 0; i--){
-    const sig = history[i];
-    if(!sig || seen.has(sig)) continue;
-    seen.add(sig);
-    unique.unshift(sig);
-  }
-  localStorage.setItem(QUIZ_HISTORY_KEY, JSON.stringify(unique.slice(-300)));
-}
-
-function appendQuizHistory(signatures){
-  const history = loadQuizHistory();
-  history.push(...signatures);
-  saveQuizHistory(history);
-}
-
-function resetQuizHistory(){
-  if(!confirm("重複履歴をリセットしますか？\n過去に出た問題がまた出やすくなります。")){
-    return;
-  }
-  localStorage.removeItem(QUIZ_HISTORY_KEY);
-  duplicateStats.historySkipped = 0;
-  renderDuplicateInfo();
-  const timePair = createTimePair();
-  quizResult.innerHTML = `<div class="quizResult">🧹 重複履歴をリセットしました${buildTimeMetaHTML(timePair.sentAt, timePair.receivedAt)}</div>`;
+    <span class="inlineTime">
+      📥受信: ${receivedAt}
+    </span>
+  </div>
+  `;
 }
 
 /* ================= カウント ================= */
+
 function get(){
+
   if(!state.running) return state;
 
-  let sec = (Date.now() - state.start) / 1000;
-  let add = sec * (state.per / 60);
+  let sec =
+    (Date.now()-state.start)/1000;
 
-  return {
-    daily: state.daily + add,
-    monthly: state.monthly + add,
-    total: state.total + add
+  let add =
+    sec*(state.per/60);
+
+  return{
+    daily:state.daily+add,
+    monthly:state.monthly+add,
+    total:state.total+add
   };
 }
 
 /* ================= UI ================= */
+
 function ui(){
+
   let c = get();
 
-  daily.textContent = Math.floor(c.daily);
-  monthly.textContent = Math.floor(c.monthly);
-  total.textContent = Math.floor(c.total);
+  daily.textContent =
+    Math.floor(c.daily);
 
-  startTime.textContent = state.fixedStart ? formatJSTDateTime(state.fixedStart) : "未開始";
-  btn.textContent = state.running ? "⏹停止" : "▶開始";
-  per.value = state.per || 60;
+  monthly.textContent =
+    Math.floor(c.monthly);
 
-  let g = Number(goal.value || 1);
-  let p = Math.min(100, Math.floor((c.daily / g) * 100));
+  total.textContent =
+    Math.floor(c.total);
+
+  if(state.fixedStart){
+
+    startTime.textContent =
+      formatJSTDateTime(state.fixedStart);
+
+  }else{
+
+    startTime.textContent = "未開始";
+  }
+
+  btn.textContent =
+    state.running
+    ? "⏹停止"
+    : "▶開始";
+
+  bestScore.textContent =
+    quizScore.best;
+
+  per.value =
+    state.per || 60;
+
+  let g =
+    Number(goal.value || 1);
+
+  let p =
+    Math.min(
+      100,
+      Math.floor((c.daily/g)*100)
+    );
 
   percent.textContent = p;
+
   fill.style.width = p + "%";
 
   checkDaily(c);
@@ -563,84 +548,126 @@ function ui(){
 }
 
 /* ================= 時計 ================= */
+
 function updateClock(){
-  clock.textContent = formatJSTDateTime(Date.now());
+
+  clock.textContent =
+    formatJSTDateTime(Date.now());
+
   ui();
 }
 
 updateClock();
-setInterval(updateClock, 1000);
+
+setInterval(updateClock,1000);
 
 /* ================= 開始停止 ================= */
+
 function toggle(){
-  state.per = Number(per.value || 60);
+
+  state.per =
+    Number(per.value || 60);
 
   if(!state.running){
+
     const now = Date.now();
 
     state.running = true;
+
     state.start = now;
+
     if(!state.fixedStart){
       state.fixedStart = now;
     }
 
-    /* 押した瞬間に即反映 */
-    startTime.textContent = formatJSTDateTime(state.fixedStart);
+    startTime.textContent =
+      formatJSTDateTime(state.fixedStart);
+
     btn.textContent = "⏹停止";
 
     save();
-    ui();
+
     return;
+
   }else{
+
     let c = get();
+
     state.daily = c.daily;
     state.monthly = c.monthly;
     state.total = c.total;
+
     state.running = false;
+
     btn.textContent = "▶開始";
+
+    save();
   }
 
-  save();
   ui();
 }
 
 /* ================= リセット ================= */
+
 function resetDay(){
+
   state.daily = 0;
   state.done = false;
+
+  state.fixedStart = 0;
+
   save();
+
   ui();
 }
 
 function resetMonth(){
+
   state.monthly = 0;
+
   save();
+
   ui();
 }
 
 function resetTotal(){
+
   state.total = 0;
+
   save();
+
   ui();
 }
 
-/* ================= 1日達成 ================= */
+/* ================= 達成 ================= */
+
 function checkDaily(c){
-  let g = Number(goal.value || 1);
+
+  let g =
+    Number(goal.value || 1);
 
   if(state.done) return;
 
   if(c.daily >= g){
+
     state.done = true;
+
     save();
+
     add("🌅 1日の目標達成！");
+
     screenFX();
   }
 }
 
-/* ================= 画面演出 ================= */
+/* ================= 演出 ================= */
+
 function screenFX(){
-  document.body.classList.add("flash","shake");
+
+  document.body.classList.add(
+    "flash",
+    "shake"
+  );
 
   setTimeout(()=>{
     document.body.classList.remove("shake");
@@ -651,136 +678,195 @@ function screenFX(){
   },5000);
 }
 
-/* ================= 段階演出 ================= */
-let stage = {};
-
 function add(text){
-  let box = document.getElementById("ach");
+
+  let box =
+    document.getElementById("ach");
+
   if(!box) return;
 
-  const timePair = createTimePair();
+  const timePair =
+    createTimePair();
 
-  let d = document.createElement("div");
+  let d =
+    document.createElement("div");
+
   d.className = "ach";
+
   d.innerHTML = `
     <div>${text}</div>
-    ${buildTimeMetaHTML(timePair.sentAt, timePair.receivedAt)}
+    ${buildTimeMetaHTML(
+      timePair.sentAt,
+      timePair.receivedAt
+    )}
   `;
+
   box.prepend(d);
 }
 
+/* ================= 段階 ================= */
+
 function checkStage(t){
-  if(t>=10000 && !stage[10000]){stage[10000]=1;add("🥁 大地：スタート");screenFX();}
-  if(t>=50000 && !stage[50000]){stage[50000]=1;add("🎀 葵：いい感じ");screenFX();}
-  if(t>=100000 && !stage[100000]){stage[100000]=1;add("🎸 蓮：積み重ね");screenFX();}
-  if(t>=200000 && !stage[200000]){stage[200000]=1;add("🎤 結衣：届いた");screenFX();}
-  if(t>=500000 && !stage[500000]){stage[500000]=1;add("🎹 悠真：すごい");screenFX();}
-  if(t>=700000 && !stage[700000]){stage[700000]=1;add("✨ 美琴：あと少し");screenFX();}
 
-  if(t>=1000000 && !stage[1000000]){
-    stage[1000000]=1;
-    add("🏆 100万達成！");
-    add("🌌 宇宙モード起動");
-    createSpace();
+  if(t>=10000 && !stage[10000]){
+    stage[10000]=1;
+    add("🥁 大地：スタート");
     screenFX();
+  }
 
-    setTimeout(()=>{
-      add("🚀 覚醒完了");
-      endSpace();
-    },8000);
+  if(t>=50000 && !stage[50000]){
+    stage[50000]=1;
+    add("🎀 葵：いい感じ");
+    screenFX();
+  }
+
+  if(t>=100000 && !stage[100000]){
+    stage[100000]=1;
+    add("🎸 蓮：積み重ね");
+    screenFX();
+  }
+
+  if(t>=200000 && !stage[200000]){
+    stage[200000]=1;
+    add("🎤 結衣：届いた");
+    screenFX();
+  }
+
+  if(t>=500000 && !stage[500000]){
+    stage[500000]=1;
+    add("🎹 悠真：すごい");
+    screenFX();
   }
 }
 
 /* ================= 宇宙 ================= */
+
 function createSpace(){
+
   space.style.display = "block";
+
   space.innerHTML = "";
-  document.body.classList.add("flash");
 
   for(let i=0;i<120;i++){
-    let s = document.createElement("div");
+
+    let s =
+      document.createElement("div");
+
     s.className = "star";
-    s.style.left = Math.random()*100 + "%";
-    s.style.top = Math.random()*100 + "%";
+
+    s.style.left =
+      Math.random()*100 + "%";
+
+    s.style.top =
+      Math.random()*100 + "%";
+
     space.appendChild(s);
   }
 }
 
-function endSpace(){
-  space.style.display = "none";
-  document.body.classList.remove("flash");
-}
-
 /* ================= 画面切替 ================= */
+
 function hideAllPages(){
+
   main.style.display = "none";
   prayerPage.style.display = "none";
   quizPage.style.display = "none";
 }
 
 function backHome(){
+
   hideAllPages();
+
   main.style.display = "block";
-  renderHomeQuizStats();
 }
 
 function openPrayer(){
+
   hideAllPages();
+
   prayerPage.style.display = "block";
+
   renderPrayer();
 }
 
-async function openQuiz(){
+function openQuiz(){
+
   hideAllPages();
+
   quizPage.style.display = "block";
-  renderQuizScore();
-  renderDuplicateInfo();
-  await generateQuiz();
+
+  generateQuiz();
 }
 
 /* ================= 御祈念 ================= */
+
 function savePrayer(){
-  let list = JSON.parse(localStorage.getItem(PRAY) || "[]");
+
+  let list =
+    JSON.parse(
+      localStorage.getItem(PRAY)
+      || "[]"
+    );
 
   if(!prayer.value.trim()){
-    alert("御祈念内容を入力してください");
+
+    alert("入力してください");
+
     return;
   }
 
-  const timePair = createTimePair();
+  const timePair =
+    createTimePair();
 
   list.unshift({
-    text: prayer.value,
-    date: timePair.fullDateTime,
-    sentAt: timePair.sentAt,
-    receivedAt: timePair.receivedAt,
-    ok: false
+    text:prayer.value,
+    date:timePair.sentAt,
+    ok:false
   });
 
-  localStorage.setItem(PRAY, JSON.stringify(list));
+  localStorage.setItem(
+    PRAY,
+    JSON.stringify(list)
+  );
+
   prayer.value = "";
+
   renderPrayer();
 }
 
 function renderPrayer(){
-  let list = JSON.parse(localStorage.getItem(PRAY) || "[]");
+
+  let list =
+    JSON.parse(
+      localStorage.getItem(PRAY)
+      || "[]"
+    );
+
   prayerList.innerHTML = "";
 
   list.forEach((x,i)=>{
-    const sentAt = x.sentAt || x.date || "不明";
-    const receivedAt = x.receivedAt || x.date || "不明";
-    const topDate = x.date || `${sentAt}`;
 
-    let d = document.createElement("div");
+    let d =
+      document.createElement("div");
+
     d.className = "ach";
 
     d.innerHTML = `
-      <div>${topDate}</div>
+      <div>${x.date}</div>
       <div>🙏 ${x.text}</div>
-      ${buildTimeMetaHTML(sentAt, receivedAt)}
+
       <button onclick="toggleOk(${i})"
-        style="background:${x.ok?'red':'#ccc'};border-radius:50%;width:40px;height:40px;color:white;">◎</button>
-      <button onclick="delPrayer(${i})">削除</button>
+      style="
+      background:${x.ok?'red':'#ccc'};
+      border-radius:50%;
+      width:40px;
+      height:40px;
+      color:white;
+      ">◎</button>
+
+      <button onclick="delPrayer(${i})">
+      削除
+      </button>
     `;
 
     prayerList.appendChild(d);
@@ -788,661 +874,225 @@ function renderPrayer(){
 }
 
 function toggleOk(i){
-  let list = JSON.parse(localStorage.getItem(PRAY) || "[]");
+
+  let list =
+    JSON.parse(
+      localStorage.getItem(PRAY)
+      || "[]"
+    );
+
   list[i].ok = !list[i].ok;
-  localStorage.setItem(PRAY, JSON.stringify(list));
+
+  localStorage.setItem(
+    PRAY,
+    JSON.stringify(list)
+  );
+
   renderPrayer();
 }
 
 function delPrayer(i){
-  let list = JSON.parse(localStorage.getItem(PRAY) || "[]");
+
+  let list =
+    JSON.parse(
+      localStorage.getItem(PRAY)
+      || "[]"
+    );
+
   list.splice(i,1);
-  localStorage.setItem(PRAY, JSON.stringify(list));
+
+  localStorage.setItem(
+    PRAY,
+    JSON.stringify(list)
+  );
+
   renderPrayer();
 }
 
-/* ================= クイズ共通 ================= */
-function rand(min,max){
-  return Math.floor(Math.random()*(max-min+1))+min;
+/* ================= クイズ ================= */
+
+const questions = [
+
+{
+q:"AIの意味は？",
+a:"Artificial Intelligence",
+c:[
+"Automatic Input",
+"Artificial Intelligence",
+"Advanced Internet",
+"Active Icon"
+]
+},
+
+{
+q:"Wi-Fiは何？",
+a:"無線通信",
+c:[
+"無線通信",
+"冷蔵機能",
+"音量機能",
+"印刷機能"
+]
+},
+
+{
+q:"URLは？",
+a:"Web上の住所",
+c:[
+"電池",
+"CPU",
+"Web上の住所",
+"音量"
+]
+},
+
+{
+q:"OSの例は？",
+a:"Windows",
+c:[
+"PNG",
+"USB",
+"Windows",
+"PDF"
+]
+},
+
+{
+q:"検索エンジンは？",
+a:"Google",
+c:[
+"Excel",
+"Google",
+"Paint",
+"Bluetooth"
+]
 }
+
+];
 
 function shuffle(arr){
   return [...arr].sort(()=>Math.random()-0.5);
 }
 
-function sleep(ms){
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+function generateQuiz(){
 
-function decodeText(text){
-  try{
-    text = decodeURIComponent(text);
-  }catch(e){}
-  const area = document.createElement("textarea");
-  area.innerHTML = text;
-  return area.value;
-}
+  quizData =
+    shuffle(questions).slice(0,5);
 
-function normalizeSignature(text){
-  let t = decodeText(String(text || ""));
-  try{
-    t = t.normalize("NFKC");
-  }catch(e){}
-  t = t.toLowerCase();
-  t = t.replace(/<[^>]*>/g,"");
-  t = t.replace(/[\s\u3000]+/g,"");
-  t = t.replace(/[!"#$%&'()*+,./:;<=>?@[\\\]^_`{|}~！？。、・：；「」『』（）［］【】]/g,"");
-  return t;
-}
+  quizSelections =
+    [null,null,null,null,null];
 
-function makeSignature(question, correct){
-  return normalizeSignature(question) + "||" + normalizeSignature(correct);
-}
-
-function setQuizLoading(message){
-  quizLoading = true;
-  quizList.innerHTML = `<div class="loadingBox">${message}</div>`;
-}
-
-function renderHomeQuizStats(){
-  homeBestScore.textContent = quizScore.best;
-}
-
-function renderQuizScore(){
-  quizScoreBoard.innerHTML = `
-    🏅 挑戦回数: ${quizScore.plays}回<br>
-    ✅ 累計正解数: ${quizScore.totalCorrect}問<br>
-    🌟 最高点: ${quizScore.best} / 5<br>
-    🕘 前回スコア: ${quizScore.last} / 5
-  `;
-  renderHomeQuizStats();
-}
-
-function renderQuizSource(){
-  if(quizSource === "internet"){
-    quizSourceInfo.innerHTML = "🌐 出題元: インターネット取得 + 日本語翻訳表示";
-  }else if(quizSource === "mixed"){
-    quizSourceInfo.innerHTML = "🌐＋🧩 出題元: インターネット中心 + 一部予備問題";
-  }else{
-    quizSourceInfo.innerHTML = "⚠️ 出題元: ローカル予備問題のみ";
-  }
-}
-
-function renderDuplicateInfo(){
-  const historyCount = loadQuizHistory().length;
-  quizDuplicateInfo.innerHTML = `
-    🔁 重複回避履歴: ${historyCount}件保存中<br>
-    🚫 履歴で除外: ${duplicateStats.historySkipped}件<br>
-    🚫 同回出題で除外: ${duplicateStats.currentSkipped}件<br>
-    📥 今回取得候補数: ${duplicateStats.fetchedTotal}件<br>
-    🌍 翻訳処理数: ${duplicateStats.translatedCount}件
-  `;
-}
-
-function resetQuizScore(){
-  if(!confirm("クイズスコアをリセットしますか？")){
-    return;
-  }
-
-  quizScore = {
-    plays:0,
-    totalCorrect:0,
-    best:0,
-    last:0
-  };
-
-  saveQuizScore();
-  renderQuizScore();
-  const timePair = createTimePair();
-  quizResult.innerHTML = `<div class="quizResult">🧹 クイズスコアをリセットしました${buildTimeMetaHTML(timePair.sentAt, timePair.receivedAt)}</div>`;
-}
-
-/* ================= Session Token ================= */
-function isTokenFresh(){
-  if(!quizToken || !quizTokenTime) return false;
-  const sixHours = 6 * 60 * 60 * 1000;
-  return (Date.now() - quizTokenTime) < (sixHours - 10 * 60 * 1000);
-}
-
-async function requestNewToken(){
-  const res = await fetch("https://opentdb.com/api_token.php?command=request");
-  const data = await res.json();
-
-  if(data && data.response_code === 0 && data.token){
-    quizToken = data.token;
-    quizTokenTime = Date.now();
-    saveQuizToken();
-    return quizToken;
-  }
-  throw new Error("token request failed");
-}
-
-async function resetTokenOnServer(){
-  if(!quizToken){
-    return requestNewToken();
-  }
-
-  const res = await fetch(`https://opentdb.com/api_token.php?command=reset&token=${quizToken}`);
-  const data = await res.json();
-
-  if(data && data.response_code === 0){
-    quizTokenTime = Date.now();
-    saveQuizToken();
-    return quizToken;
-  }
-
-  return requestNewToken();
-}
-
-async function ensureQuizToken(forceNew=false){
-  if(!forceNew && isTokenFresh()){
-    return quizToken;
-  }
-  return requestNewToken();
-}
-
-async function waitForTriviaRateLimit(){
-  const needWait = 5200 - (Date.now() - lastTriviaApiCallAt);
-  if(needWait > 0){
-    await sleep(needWait);
-  }
-  lastTriviaApiCallAt = Date.now();
-}
-
-async function fetchTriviaBatch(amount=10){
-  let tries = 0;
-
-  while(tries < 4){
-    tries++;
-    await ensureQuizToken(false);
-    await waitForTriviaRateLimit();
-
-    const url = `https://opentdb.com/api.php?amount=${amount}&type=multiple&encode=url3986&token=${quizToken}`;
-    const res = await fetch(url);
-    const data = await res.json();
-
-    if(data.response_code === 0){
-      quizTokenTime = Date.now();
-      saveQuizToken();
-      return Array.isArray(data.results) ? data.results : [];
-    }
-
-    if(data.response_code === 3){
-      await requestNewToken();
-      continue;
-    }
-
-    if(data.response_code === 4){
-      await resetTokenOnServer();
-      continue;
-    }
-
-    if(data.response_code === 5){
-      await sleep(5500);
-      continue;
-    }
-
-    break;
-  }
-
-  throw new Error("trivia fetch failed");
-}
-
-/* ================= 翻訳 ================= */
-function shouldTranslate(text){
-  const t = String(text || "").trim();
-  if(!t) return false;
-  if(/[ぁ-んァ-ヶ一-龠々]/.test(t)) return false;
-  return /[A-Za-z]/.test(t);
-}
-
-function cacheKeyForTranslation(text){
-  return "en|ja|" + text;
-}
-
-function commonWordMap(text){
-  const map = {
-    "easy":"かんたん",
-    "medium":"ふつう",
-    "hard":"むずかしい",
-    "general knowledge":"一般常識",
-    "science & nature":"科学・自然",
-    "science and nature":"科学・自然",
-    "computers":"コンピューター",
-    "history":"歴史",
-    "sports":"スポーツ",
-    "geography":"地理",
-    "entertainment: books":"エンタメ：本",
-    "entertainment: film":"エンタメ：映画",
-    "entertainment: music":"エンタメ：音楽",
-    "entertainment: television":"エンタメ：テレビ",
-    "entertainment: video games":"エンタメ：ゲーム",
-    "politics":"政治",
-    "animals":"動物",
-    "mythology":"神話",
-    "art":"アート",
-    "celebrities":"有名人",
-    "vehicles":"乗り物"
-  };
-
-  const key = String(text || "").trim().toLowerCase();
-  return map[key] || null;
-}
-
-async function waitForTranslateRateLimit(){
-  const needWait = 300 - (Date.now() - lastTranslateCallAt);
-  if(needWait > 0){
-    await sleep(needWait);
-  }
-  lastTranslateCallAt = Date.now();
-}
-
-async function translateTextEnToJa(text){
-  const original = decodeText(String(text || "")).trim();
-  if(!original) return "";
-
-  const mapped = commonWordMap(original);
-  if(mapped) return mapped;
-
-  if(!shouldTranslate(original)) return original;
-
-  const key = cacheKeyForTranslation(original);
-  if(translationCache[key]){
-    return translationCache[key];
-  }
-
-  try{
-    await waitForTranslateRateLimit();
-
-    const safeText = original.slice(0, 450);
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(safeText)}&langpair=en|ja&mt=1`;
-    const res = await fetch(url);
-    const data = await res.json();
-
-    let translated = "";
-    if(data && data.responseData && data.responseData.translatedText){
-      translated = decodeText(data.responseData.translatedText).trim();
-    }
-
-    if(!translated){
-      translated = original;
-    }
-
-    translationCache[key] = translated;
-    saveTranslationCache();
-    return translated;
-  }catch(e){
-    return original;
-  }
-}
-
-async function translateQuizItems(items){
-  const uniqueTexts = new Set();
-
-  items.forEach(item=>{
-    uniqueTexts.add(item.q);
-    uniqueTexts.add(item.correct);
-    (item.choices || []).forEach(c => uniqueTexts.add(c));
-    if(item.category) uniqueTexts.add(item.category);
-    if(item.difficulty) uniqueTexts.add(item.difficulty);
-  });
-
-  const translateMap = {};
-  const targets = [...uniqueTexts].filter(t => shouldTranslate(t) || commonWordMap(t));
-
-  duplicateStats.translatedCount = targets.length;
-  renderDuplicateInfo();
-
-  for(const text of targets){
-    translateMap[text] = await translateTextEnToJa(text);
-  }
-
-  items.forEach(item=>{
-    item.qJa = translateMap[item.q] || item.q;
-    item.correctJa = translateMap[item.correct] || item.correct;
-    item.choicesJa = item.choices.map(c => translateMap[c] || c);
-    item.categoryJa = translateMap[item.category] || item.category;
-    item.difficultyJa = translateMap[item.difficulty] || item.difficulty;
-  });
-
-  return items;
-}
-
-/* ================= 問題変換 ================= */
-function convertTriviaItem(item){
-  const question = decodeText(item.question);
-  const correct = decodeText(item.correct_answer);
-  const incorrect = (item.incorrect_answers || []).map(x => decodeText(x));
-  const choices = shuffle([correct, ...incorrect]);
-
-  return {
-    q: question,
-    correct: correct,
-    choices: choices,
-    category: decodeText(item.category || ""),
-    difficulty: decodeText(item.difficulty || ""),
-    signature: makeSignature(question, correct),
-    from: "internet",
-    qJa: question,
-    correctJa: correct,
-    choicesJa: [...choices],
-    categoryJa: decodeText(item.category || ""),
-    difficultyJa: decodeText(item.difficulty || "")
-  };
-}
-
-/* ================= 予備問題 ================= */
-const fallbackQuestions = [
-  { q:"CPUの意味として最も近いものは？", correct:"中央処理装置", choices:["中央処理装置","画面制御装置","音声処理装置","通信停止装置"] },
-  { q:"URLは主に何を示す？", correct:"Web上の住所", choices:["音量設定","Web上の住所","画像サイズ","電池残量"] },
-  { q:"パスワード管理で望ましいのは？", correct:"使い回しを避ける", choices:["全サイト同じ","紙に公開する","使い回しを避ける","短く単純にする"] },
-  { q:"ブラウザの例として正しいのは？", correct:"Chrome", choices:["Chrome","Excel","Word","Paint"] },
-  { q:"Wi-Fiは主に何のために使う？", correct:"無線通信", choices:["印刷専用","無線通信","画面拡大","音量調整"] },
-  { q:"AIは一般に何の略？", correct:"Artificial Intelligence", choices:["Automatic Internet","Artificial Intelligence","Analog Interface","Advanced Input"] },
-  { q:"検索エンジンに該当するのは？", correct:"Google", choices:["Google","PowerPoint","Photoshop","Bluetooth"] },
-  { q:"メールの件名は何のため？", correct:"内容の要約", choices:["本文を隠す","内容の要約","容量を増やす","削除防止"] },
-  { q:"保存前の一時データ置き場として近いのは？", correct:"メモリ", choices:["紙","メモリ","机","スピーカー"] },
-  { q:"二段階認証の目的は？", correct:"安全性向上", choices:["通信速度低下","安全性向上","画面明るさ調整","印刷品質向上"] },
-  { q:"クラウド保存の特徴として近いのは？", correct:"ネット経由で保存", choices:["紙に保存","ネット経由で保存","電源を切る","印刷だけ可能"] },
-  { q:"ダウンロードは何をすること？", correct:"受け取る", choices:["消す","送る","受け取る","圧縮だけする"] },
-  { q:"アップロードは何をすること？", correct:"送る", choices:["受け取る","閉じる","送る","印刷する"] },
-  { q:"リンクを開く前に確認したいのは？", correct:"URLの行き先", choices:["画面の色","URLの行き先","文字の大きさ","音量"] },
-  { q:"インターネット接続がないと使いにくいものは？", correct:"Web検索", choices:["懐中電灯","紙の本","Web検索","電卓"] },
-  { q:"SNSで注意したいことは？", correct:"個人情報の公開", choices:["個人情報の公開","文字数ゼロ","背景色","電源の色"] },
-  { q:"再起動は何のために行うことが多い？", correct:"一時的不調の改善", choices:["本体を冷凍","一時的不調の改善","画面を割る","容量を紙に写す"] },
-  { q:"QRコードを読み取ると何が起きることが多い？", correct:"URLや情報を開く", choices:["音量が上がる","電源が切れる","URLや情報を開く","色が変わる"] },
-  { q:"OSの例として正しいのは？", correct:"Windows", choices:["Windows","JPEG","USB","PDF"] },
-  { q:"ブラウザでページ更新をする目的は？", correct:"最新表示にする", choices:["色を変える","音を消す","最新表示にする","容量を減らす"] },
-  { q:"迷惑メールへの対応で適切なのは？", correct:"不用意に開かない", choices:["全部返信","不用意に開かない","必ず転送","印刷して放置"] },
-  { q:"AIチャットに入力しない方がよいものは？", correct:"機密情報", choices:["天気の質問","機密情報","一般的な相談","献立の相談"] },
-  { q:"画像ファイル形式の例は？", correct:"PNG", choices:["PNG","TXT","CSV","DOCX"] },
-  { q:"インターネットで情報確認するとき大切なのは？", correct:"複数ソース確認", choices:["最初の1件だけ","複数ソース確認","題名だけ見る","日付を見ない"] },
-  { q:"Web会議で必要になりやすいものは？", correct:"マイク", choices:["定規","マイク","消しゴム","はさみ"] }
-];
-
-function generateFallbackQuiz(count, currentSet, historySet){
-  const pool = shuffle(fallbackQuestions).map(item=>{
-    const signature = makeSignature(item.q, item.correct);
-    const shuffledChoices = shuffle(item.choices);
-    return {
-      q:item.q,
-      correct:item.correct,
-      choices:shuffledChoices,
-      category:"Fallback",
-      difficulty:"easy",
-      signature,
-      from:"local",
-      qJa:item.q,
-      correctJa:item.correct,
-      choicesJa:[...shuffledChoices],
-      categoryJa:"予備問題",
-      difficultyJa:"かんたん"
-    };
-  });
-
-  const picked = [];
-
-  for(const item of pool){
-    if(picked.length >= count) break;
-    if(currentSet.has(item.signature)) continue;
-    if(historySet.has(item.signature)) continue;
-    currentSet.add(item.signature);
-    picked.push(item);
-  }
-
-  if(picked.length < count){
-    for(const item of pool){
-      if(picked.length >= count) break;
-      if(currentSet.has(item.signature)) continue;
-      currentSet.add(item.signature);
-      picked.push(item);
-    }
-  }
-
-  return picked;
-}
-
-/* ================= 重複回避つきクイズ生成 ================= */
-async function buildUniqueInternetQuiz(targetCount=5){
-  const history = loadQuizHistory();
-  const recentHistory = history.slice(-200);
-  const historySet = new Set(recentHistory);
-  const currentSet = new Set();
-  const selected = [];
-
-  duplicateStats = {
-    historySkipped: 0,
-    currentSkipped: 0,
-    fetchedTotal: 0,
-    translatedCount: 0,
-    mode: "internet"
-  };
-
-  let phase = 1;
-  let attempts = 0;
-
-  while(selected.length < targetCount && attempts < 4){
-    attempts++;
-    const batch = await fetchTriviaBatch(15);
-    duplicateStats.fetchedTotal += batch.length;
-
-    for(const raw of batch){
-      const item = convertTriviaItem(raw);
-      if(currentSet.has(item.signature)){
-        duplicateStats.currentSkipped++;
-        continue;
-      }
-      if(historySet.has(item.signature)){
-        duplicateStats.historySkipped++;
-        continue;
-      }
-
-      currentSet.add(item.signature);
-      selected.push(item);
-      if(selected.length >= targetCount) break;
-    }
-  }
-
-  if(selected.length < targetCount){
-    phase = 2;
-    let relaxedAttempts = 0;
-
-    while(selected.length < targetCount && relaxedAttempts < 2){
-      relaxedAttempts++;
-      const batch = await fetchTriviaBatch(10);
-      duplicateStats.fetchedTotal += batch.length;
-
-      for(const raw of batch){
-        const item = convertTriviaItem(raw);
-        if(currentSet.has(item.signature)){
-          duplicateStats.currentSkipped++;
-          continue;
-        }
-        currentSet.add(item.signature);
-        selected.push(item);
-        if(selected.length >= targetCount) break;
-      }
-    }
-  }
-
-  let mode = (phase === 1 || selected.length === targetCount) ? "internet" : "mixed";
-
-  if(selected.length < targetCount){
-    const fallback = generateFallbackQuiz(targetCount - selected.length, currentSet, historySet);
-    selected.push(...fallback);
-    mode = selected.some(x => x.from === "internet") ? "mixed" : "local";
-  }
-
-  appendQuizHistory(selected.map(x => x.signature));
-  duplicateStats.mode = mode;
-
-  return { questions: selected.slice(0, targetCount), mode };
-}
-
-/* ================= クイズ生成 ================= */
-async function generateQuiz(){
-  if(quizLoading) return;
-
-  quizData = [];
-  quizSelections = [null, null, null, null, null];
   quizAnswered = false;
+
   quizResult.innerHTML = "";
-  renderQuizScore();
-  renderDuplicateInfo();
-  setQuizLoading("🌐 インターネットから問題を取得中...");
 
-  try{
-    const result = await buildUniqueInternetQuiz(5);
-    quizData = result.questions;
-    quizSource = result.mode;
-
-    setQuizLoading("🌍 英語問題を日本語に変換中...");
-    await translateQuizItems(quizData);
-  }catch(e){
-    const currentSet = new Set();
-    const historySet = new Set(loadQuizHistory().slice(-200));
-    quizData = generateFallbackQuiz(5, currentSet, historySet);
-    appendQuizHistory(quizData.map(x => x.signature));
-    quizSource = "local";
-    duplicateStats.mode = "local";
-    duplicateStats.translatedCount = 0;
-  }
-
-  quizLoading = false;
-  renderQuizSource();
-  renderDuplicateInfo();
   renderQuiz();
 }
 
-/* ================= 表示 ================= */
-function toggleOriginal(index){
-  const box = document.getElementById("originalBox" + index);
-  if(!box) return;
-  box.style.display = (box.style.display === "none") ? "block" : "none";
-}
-
 function renderQuiz(){
+
   quizList.innerHTML = "";
 
-  quizData.forEach((item, i)=>{
-    let div = document.createElement("div");
+  quizData.forEach((q,i)=>{
+
+    let div =
+      document.createElement("div");
+
     div.className = "quizItem";
 
-    let meta = "";
-    if(item.categoryJa || item.difficultyJa){
-      meta = `<div class="quizMeta"><span class="translatedBadge">日本語表示</span>分類: ${item.categoryJa || "-"} / 難易度: ${item.difficultyJa || "-"}</div>`;
-    }
+    let choices =
+      shuffle([...q.c]);
 
-    let choicesHtml = item.choices.map((choice, idx)=>{
-      let cls = "choiceBtn";
-
-      if(quizSelections[i] === idx){
-        cls += " selected";
-      }
-
-      if(quizAnswered){
-        if(choice === item.correct){
-          cls += " correct";
-        }else if(quizSelections[i] === idx && choice !== item.correct){
-          cls += " wrong";
-        }
-      }
-
-      const jaText = item.choicesJa[idx] || choice;
-
-      return `
-        <button class="${cls}" onclick="selectChoice(${i}, ${idx})" ${quizAnswered ? "disabled" : ""}>
-          ${idx+1}. ${jaText}
-        </button>
-      `;
-    }).join("");
+    q.currentChoices = choices;
 
     div.innerHTML = `
-      ${meta}
-      <div class="quizQuestion">Q${i+1}. ${item.qJa || item.q}</div>
-      ${choicesHtml}
-      <div class="originalToggle" onclick="toggleOriginal(${i})">英語原文を表示 / 非表示</div>
-      <div id="originalBox${i}" class="quizOriginal" style="display:none;">
-        <b>Question:</b> ${item.q}<br>
-        <b>Choices:</b><br>
-        ${item.choices.map((c, idx) => `${idx+1}. ${c}`).join("<br>")}
+      <div class="quizQuestion">
+      Q${i+1}. ${q.q}
       </div>
+
+      ${choices.map((x,idx)=>`
+      <button
+      class="choiceBtn"
+      onclick="selectChoice(${i},${idx})">
+      ${idx+1}. ${x}
+      </button>
+      `).join("")}
     `;
 
     quizList.appendChild(div);
   });
 }
 
-function selectChoice(questionIndex, choiceIndex){
-  if(quizAnswered || quizLoading) return;
-  quizSelections[questionIndex] = choiceIndex;
-  renderQuiz();
+function selectChoice(qi,ci){
+
+  if(quizAnswered) return;
+
+  quizSelections[qi] = ci;
 }
 
 function submitQuiz(){
-  if(quizAnswered || quizLoading || quizData.length === 0) return;
+
+  if(quizAnswered) return;
 
   quizAnswered = true;
+
   let score = 0;
+
   let html = "";
 
   quizData.forEach((q,i)=>{
-    let selectedIndex = quizSelections[i];
 
-    if(selectedIndex === null){
-      html += `<div class="ach">⚪ Q${i+1} 未回答　正解: ${q.correctJa || q.correct}</div>`;
-      return;
-    }
+    let idx =
+      quizSelections[i];
 
-    let selectedValue = q.choices[selectedIndex];
-    let selectedValueJa = q.choicesJa[selectedIndex] || selectedValue;
+    let selected =
+      q.currentChoices[idx];
 
-    if(selectedValue === q.correct){
+    if(selected === q.a){
+
       score++;
-      html += `<div class="ach">✅ Q${i+1} 正解</div>`;
+
+      html += `
+      <div class="ach">
+      ✅ Q${i+1} 正解
+      </div>
+      `;
+
     }else{
-      html += `<div class="ach">❌ Q${i+1} 不正解　あなたの答え: ${selectedValueJa}　正解: ${q.correctJa || q.correct}</div>`;
+
+      html += `
+      <div class="ach">
+      ❌ Q${i+1}
+      正解: ${q.a}
+      </div>
+      `;
     }
   });
 
-  quizScore.plays++;
-  quizScore.totalCorrect += score;
-  quizScore.last = score;
   if(score > quizScore.best){
+
     quizScore.best = score;
-  }
-  saveQuizScore();
-  renderQuizScore();
 
-  let msg = "";
-  if(score === 5){
-    msg = "🌟 全問正解！脳がかなりスッキリです！";
-  }else if(score >= 3){
-    msg = "✨ いい感じ！脳がほぐれてきています。";
-  }else{
-    msg = "💡 もう一回チャレンジでさらにスッキリ！";
+    saveQuiz();
   }
-
-  const timePair = createTimePair();
 
   quizResult.innerHTML = `
     <div class="quizResult">
-      結果：${score} / 5<br>${msg}
-      ${buildTimeMetaHTML(timePair.sentAt, timePair.receivedAt)}
+      結果 ${score}/5
     </div>
+
     ${html}
   `;
 
-  renderQuiz();
+  ui();
+
   screenFX();
 }
 
 /* ================= 初期表示 ================= */
-renderQuizScore();
-renderHomeQuizStats();
-renderQuizSource();
-renderDuplicateInfo();
+
 ui();
+
 </script>
 
 </body>
