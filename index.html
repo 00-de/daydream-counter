@@ -223,6 +223,18 @@ input,textarea{
   margin-top:4px;
   display:inline-block;
 }
+
+.timeMeta{
+  font-size:12px;
+  color:#555;
+  margin-top:6px;
+  line-height:1.5;
+}
+
+.inlineTime{
+  display:inline-block;
+  margin-right:10px;
+}
 </style>
 </head>
 
@@ -337,6 +349,57 @@ const goal = document.getElementById("goal");
 const percent = document.getElementById("percent");
 const fill = document.getElementById("fill");
 const space = document.getElementById("space");
+
+/* ================= 日本時間（JST） ================= */
+const JST_TIME_ZONE = "Asia/Tokyo";
+
+const jstDateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
+  timeZone: JST_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false
+});
+
+const jstTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
+  timeZone: JST_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false
+});
+
+function formatJSTDateTime(value){
+  if(!value) return "未開始";
+  const d = value instanceof Date ? value : new Date(value);
+  return jstDateTimeFormatter.format(d) + " JST";
+}
+
+function formatJSTTime(value){
+  const d = value instanceof Date ? value : new Date(value);
+  return jstTimeFormatter.format(d) + " JST";
+}
+
+function createTimePair(){
+  const now = Date.now();
+  return {
+    sentAt: formatJSTTime(now),
+    receivedAt: formatJSTTime(now),
+    fullDateTime: formatJSTDateTime(now)
+  };
+}
+
+function buildTimeMetaHTML(sentAt, receivedAt){
+  return `
+    <div class="timeMeta">
+      <span class="inlineTime">📤送信: ${sentAt}</span>
+      <span class="inlineTime">📥受信: ${receivedAt}</span>
+    </div>
+  `;
+}
 
 /* ================= 永続キー ================= */
 const KEY = "dx_all_final_v3";
@@ -457,7 +520,8 @@ function resetQuizHistory(){
   localStorage.removeItem(QUIZ_HISTORY_KEY);
   duplicateStats.historySkipped = 0;
   renderDuplicateInfo();
-  quizResult.innerHTML = `<div class="quizResult">🧹 重複履歴をリセットしました</div>`;
+  const timePair = createTimePair();
+  quizResult.innerHTML = `<div class="quizResult">🧹 重複履歴をリセットしました${buildTimeMetaHTML(timePair.sentAt, timePair.receivedAt)}</div>`;
 }
 
 /* ================= カウント ================= */
@@ -482,8 +546,9 @@ function ui(){
   monthly.textContent = Math.floor(c.monthly);
   total.textContent = Math.floor(c.total);
 
-  startTime.textContent =
-    state.fixedStart ? new Date(state.fixedStart).toLocaleString() : "未開始";
+  startTime.textContent = state.fixedStart ? formatJSTDateTime(state.fixedStart) : "未開始";
+  btn.textContent = state.running ? "⏹停止" : "▶開始";
+  per.value = state.per || 60;
 
   let g = Number(goal.value || 1);
   let p = Math.min(100, Math.floor((c.daily / g) * 100));
@@ -498,30 +563,45 @@ function ui(){
 }
 
 /* ================= 時計 ================= */
-setInterval(()=>{
-  clock.textContent = new Date().toLocaleString();
+function updateClock(){
+  clock.textContent = formatJSTDateTime(Date.now());
   ui();
-},1000);
+}
+
+updateClock();
+setInterval(updateClock, 1000);
 
 /* ================= 開始停止 ================= */
 function toggle(){
   state.per = Number(per.value || 60);
 
   if(!state.running){
+    const now = Date.now();
+
     state.running = true;
-    state.start = Date.now();
-    state.fixedStart = state.fixedStart || Date.now();
-    btn.textContent = "停止";
+    state.start = now;
+    if(!state.fixedStart){
+      state.fixedStart = now;
+    }
+
+    /* 押した瞬間に即反映 */
+    startTime.textContent = formatJSTDateTime(state.fixedStart);
+    btn.textContent = "⏹停止";
+
+    save();
+    ui();
+    return;
   }else{
     let c = get();
     state.daily = c.daily;
     state.monthly = c.monthly;
     state.total = c.total;
     state.running = false;
-    btn.textContent = "開始";
+    btn.textContent = "▶開始";
   }
 
   save();
+  ui();
 }
 
 /* ================= リセット ================= */
@@ -578,9 +658,14 @@ function add(text){
   let box = document.getElementById("ach");
   if(!box) return;
 
+  const timePair = createTimePair();
+
   let d = document.createElement("div");
   d.className = "ach";
-  d.textContent = text;
+  d.innerHTML = `
+    <div>${text}</div>
+    ${buildTimeMetaHTML(timePair.sentAt, timePair.receivedAt)}
+  `;
   box.prepend(d);
 }
 
@@ -662,9 +747,13 @@ function savePrayer(){
     return;
   }
 
+  const timePair = createTimePair();
+
   list.unshift({
     text: prayer.value,
-    date: new Date().toLocaleString(),
+    date: timePair.fullDateTime,
+    sentAt: timePair.sentAt,
+    receivedAt: timePair.receivedAt,
     ok: false
   });
 
@@ -678,12 +767,17 @@ function renderPrayer(){
   prayerList.innerHTML = "";
 
   list.forEach((x,i)=>{
+    const sentAt = x.sentAt || x.date || "不明";
+    const receivedAt = x.receivedAt || x.date || "不明";
+    const topDate = x.date || `${sentAt}`;
+
     let d = document.createElement("div");
     d.className = "ach";
 
     d.innerHTML = `
-      ${x.date}<br>
-      🙏 ${x.text}<br>
+      <div>${topDate}</div>
+      <div>🙏 ${x.text}</div>
+      ${buildTimeMetaHTML(sentAt, receivedAt)}
       <button onclick="toggleOk(${i})"
         style="background:${x.ok?'red':'#ccc'};border-radius:50%;width:40px;height:40px;color:white;">◎</button>
       <button onclick="delPrayer(${i})">削除</button>
@@ -799,7 +893,8 @@ function resetQuizScore(){
 
   saveQuizScore();
   renderQuizScore();
-  quizResult.innerHTML = `<div class="quizResult">🧹 クイズスコアをリセットしました</div>`;
+  const timePair = createTimePair();
+  quizResult.innerHTML = `<div class="quizResult">🧹 クイズスコアをリセットしました${buildTimeMetaHTML(timePair.sentAt, timePair.receivedAt)}</div>`;
 }
 
 /* ================= Session Token ================= */
@@ -1068,17 +1163,18 @@ const fallbackQuestions = [
 function generateFallbackQuiz(count, currentSet, historySet){
   const pool = shuffle(fallbackQuestions).map(item=>{
     const signature = makeSignature(item.q, item.correct);
+    const shuffledChoices = shuffle(item.choices);
     return {
       q:item.q,
       correct:item.correct,
-      choices:shuffle(item.choices),
+      choices:shuffledChoices,
       category:"Fallback",
       difficulty:"easy",
       signature,
       from:"local",
       qJa:item.q,
       correctJa:item.correct,
-      choicesJa:shuffle(item.choices),
+      choicesJa:[...shuffledChoices],
       categoryJa:"予備問題",
       difficultyJa:"かんたん"
     };
@@ -1327,8 +1423,13 @@ function submitQuiz(){
     msg = "💡 もう一回チャレンジでさらにスッキリ！";
   }
 
+  const timePair = createTimePair();
+
   quizResult.innerHTML = `
-    <div class="quizResult">結果：${score} / 5<br>${msg}</div>
+    <div class="quizResult">
+      結果：${score} / 5<br>${msg}
+      ${buildTimeMetaHTML(timePair.sentAt, timePair.receivedAt)}
+    </div>
     ${html}
   `;
 
@@ -1337,11 +1438,11 @@ function submitQuiz(){
 }
 
 /* ================= 初期表示 ================= */
-ui();
 renderQuizScore();
 renderHomeQuizStats();
 renderQuizSource();
 renderDuplicateInfo();
+ui();
 </script>
 
 </body>
