@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>題目カウンター DayDreamプラス DX+</title>
+<title>題目カウンター DayDreamプラス DX+ 完全版</title>
 
 <style>
 body{
@@ -132,7 +132,13 @@ input,textarea{
 .quizQuestion{
   font-weight:bold;
   margin-bottom:8px;
-  line-height:1.6;
+  line-height:1.7;
+}
+
+.quizMeta{
+  font-size:12px;
+  color:#666;
+  margin-bottom:6px;
 }
 
 .choiceBtn{
@@ -174,6 +180,20 @@ input,textarea{
   background:#e8f5e9;
   font-weight:bold;
   line-height:1.7;
+}
+
+.loadingBox{
+  margin-top:10px;
+  padding:12px;
+  border-radius:12px;
+  background:#e3f2fd;
+  font-weight:bold;
+}
+
+.smallNote{
+  font-size:12px;
+  color:#555;
+  margin-top:6px;
 }
 </style>
 </head>
@@ -245,15 +265,21 @@ input,textarea{
     <h3>🧠 脳スッキリクイズ</h3>
     <p>毎回ランダムで5問出題されます。</p>
 
+    <div id="quizSourceInfo" class="ach"></div>
     <div id="quizScoreBoard" class="ach"></div>
+    <div id="quizDuplicateInfo" class="ach"></div>
     <div id="quizList"></div>
 
     <button class="startBtn" onclick="submitQuiz()">答え合わせ</button>
     <button class="quizBtn" onclick="generateQuiz()">問題を作り直す</button>
     <button class="resetBtn" onclick="resetQuizScore()">スコアリセット</button>
+    <button class="resetBtn" onclick="resetQuizHistory()">重複履歴リセット</button>
     <button class="navBtn" onclick="backHome()">戻る</button>
 
     <div id="quizResult"></div>
+    <div class="smallNote">
+      ※ 重複回避: Session Token + 履歴チェック + 同回出題内重複排除
+    </div>
   </div>
 </div>
 
@@ -268,6 +294,8 @@ const quizPage = document.getElementById("quizPage");
 const quizList = document.getElementById("quizList");
 const quizResult = document.getElementById("quizResult");
 const quizScoreBoard = document.getElementById("quizScoreBoard");
+const quizSourceInfo = document.getElementById("quizSourceInfo");
+const quizDuplicateInfo = document.getElementById("quizDuplicateInfo");
 const homeBestScore = document.getElementById("homeBestScore");
 
 const clock = document.getElementById("clock");
@@ -285,7 +313,10 @@ const space = document.getElementById("space");
 /* ================= 永続キー ================= */
 const KEY = "dx_all_final_v3";
 const PRAY = "dx_pray_final_v3";
-const QUIZ_SCORE_KEY = "dx_quiz_score_v1";
+const QUIZ_SCORE_KEY = "dx_quiz_score_v2";
+const QUIZ_TOKEN_KEY = "dx_quiz_token_v2";
+const QUIZ_TOKEN_TIME_KEY = "dx_quiz_token_time_v2";
+const QUIZ_HISTORY_KEY = "dx_quiz_history_v2";
 
 /* ================= 状態 ================= */
 let state = JSON.parse(localStorage.getItem(KEY)) || {
@@ -306,12 +337,73 @@ let quizScore = JSON.parse(localStorage.getItem(QUIZ_SCORE_KEY)) || {
   last:0
 };
 
+let quizToken = localStorage.getItem(QUIZ_TOKEN_KEY) || "";
+let quizTokenTime = Number(localStorage.getItem(QUIZ_TOKEN_TIME_KEY) || 0);
+
+let quizData = [];
+let quizSelections = [];
+let quizAnswered = false;
+let quizLoading = false;
+let quizSource = "internet";
+let duplicateStats = {
+  historySkipped: 0,
+  currentSkipped: 0,
+  fetchedTotal: 0,
+  mode: "internet"
+};
+
+let lastApiCallAt = 0;
+
+/* ================= 保存 ================= */
 function save(){
   localStorage.setItem(KEY, JSON.stringify(state));
 }
 
 function saveQuizScore(){
   localStorage.setItem(QUIZ_SCORE_KEY, JSON.stringify(quizScore));
+}
+
+function saveQuizToken(){
+  localStorage.setItem(QUIZ_TOKEN_KEY, quizToken || "");
+  localStorage.setItem(QUIZ_TOKEN_TIME_KEY, String(quizTokenTime || 0));
+}
+
+/* ================= 履歴 ================= */
+function loadQuizHistory(){
+  try{
+    const data = JSON.parse(localStorage.getItem(QUIZ_HISTORY_KEY) || "[]");
+    return Array.isArray(data) ? data : [];
+  }catch(e){
+    return [];
+  }
+}
+
+function saveQuizHistory(history){
+  const unique = [];
+  const seen = new Set();
+  for(let i = history.length - 1; i >= 0; i--){
+    const sig = history[i];
+    if(!sig || seen.has(sig)) continue;
+    seen.add(sig);
+    unique.unshift(sig);
+  }
+  localStorage.setItem(QUIZ_HISTORY_KEY, JSON.stringify(unique.slice(-300)));
+}
+
+function appendQuizHistory(signatures){
+  const history = loadQuizHistory();
+  history.push(...signatures);
+  saveQuizHistory(history);
+}
+
+function resetQuizHistory(){
+  if(!confirm("重複履歴をリセットしますか？\n今後、過去に出た問題も再び出やすくなります。")){
+    return;
+  }
+  localStorage.removeItem(QUIZ_HISTORY_KEY);
+  duplicateStats.historySkipped = 0;
+  renderDuplicateInfo();
+  quizResult.innerHTML = `<div class="quizResult">🧹 重複履歴をリセットしました</div>`;
 }
 
 /* ================= カウント ================= */
@@ -499,11 +591,12 @@ function openPrayer(){
   renderPrayer();
 }
 
-function openQuiz(){
+async function openQuiz(){
   hideAllPages();
   quizPage.style.display = "block";
   renderQuizScore();
-  generateQuiz();
+  renderDuplicateInfo();
+  await generateQuiz();
 }
 
 /* ================= 御祈念 ================= */
@@ -560,11 +653,7 @@ function delPrayer(i){
   renderPrayer();
 }
 
-/* ================= クイズ ================= */
-let quizData = [];
-let quizSelections = [];
-let quizAnswered = false;
-
+/* ================= クイズ共通 ================= */
 function rand(min,max){
   return Math.floor(Math.random()*(max-min+1))+min;
 }
@@ -573,138 +662,38 @@ function shuffle(arr){
   return [...arr].sort(()=>Math.random()-0.5);
 }
 
-function uniqueArray(arr){
-  return [...new Set(arr)];
+function sleep(ms){
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function makeChoices(correct, wrongs){
-  let arr = uniqueArray([String(correct), ...wrongs.map(x=>String(x))]);
-  arr = arr.filter(x => x !== "undefined" && x !== "null");
-
-  if(!arr.includes(String(correct))){
-    arr.unshift(String(correct));
-  }
-
-  while(arr.length < 4){
-    let n = Number(correct);
-    if(!isNaN(n)){
-      arr.push(String(n + rand(1,9)));
-    }else{
-      arr.push(String(correct) + rand(1,9));
-    }
-    arr = uniqueArray(arr);
-  }
-
-  let finalChoices = [String(correct)];
-  let rest = arr.filter(x => x !== String(correct));
-  rest = shuffle(rest).slice(0,3);
-  finalChoices.push(...rest);
-
-  return shuffle(finalChoices);
+function decodeText(text){
+  try{
+    text = decodeURIComponent(text);
+  }catch(e){}
+  const area = document.createElement("textarea");
+  area.innerHTML = text;
+  return area.value;
 }
 
-/* ----- 問題生成 ----- */
-function makeMathQuestion(){
-  let type = rand(1,3);
-
-  if(type===1){
-    let a = rand(10,50);
-    let b = rand(5,30);
-    let correct = a+b;
-    return {
-      q:`${a} + ${b} = ?`,
-      correct:String(correct),
-      choices:makeChoices(correct,[correct+1, correct-1, correct+2, correct-2, correct+10])
-    };
-  }
-
-  if(type===2){
-    let a = rand(20,60);
-    let b = rand(5,19);
-    let correct = a-b;
-    return {
-      q:`${a} - ${b} = ?`,
-      correct:String(correct),
-      choices:makeChoices(correct,[correct+1, correct-1, correct+3, correct-3, correct+10])
-    };
-  }
-
-  let x = rand(2,9);
-  let y = rand(2,9);
-  let correct = x*y;
-  return {
-    q:`${x} × ${y} = ?`,
-    correct:String(correct),
-    choices:makeChoices(correct,[correct+x, correct-y, correct+2, correct-2, x+y])
-  };
+function normalizeSignature(text){
+  let t = decodeText(String(text || ""));
+  try{
+    t = t.normalize("NFKC");
+  }catch(e){}
+  t = t.toLowerCase();
+  t = t.replace(/<[^>]*>/g,"");
+  t = t.replace(/[\s\u3000]+/g,"");
+  t = t.replace(/[!"#$%&'()*+,./:;<=>?@[\\\]^_`{|}~！？。、・：；「」『』（）［］【】]/g,"");
+  return t;
 }
 
-function makeSequenceQuestion(){
-  let start = rand(1,10);
-  let step = rand(2,6);
-  let correct = start + step*4;
-  let seq = [start, start+step, start+step*2, start+step*3];
-
-  return {
-    q:`数列の続きは？ ${seq.join(", ")}, ?`,
-    correct:String(correct),
-    choices:makeChoices(correct,[correct+step, correct-step, correct+1, correct-1, correct+2])
-  };
+function makeSignature(question, correct){
+  return normalizeSignature(question) + "||" + normalizeSignature(correct);
 }
 
-function makeReverseQuestion(){
-  const words = ["さくら","ひこうき","でんしゃ","たいよう","みらい","きせき"];
-  let w = words[rand(0,words.length-1)];
-  let correct = w.split("").reverse().join("");
-
-  let wrong1 = w;
-  let wrong2 = w.slice(1) + w[0];
-  let wrong3 = correct.slice(1) + correct[0];
-  let wrong4 = shuffle(w.split("")).join("");
-
-  return {
-    q:`「${w}」を逆から読むと？`,
-    correct:String(correct),
-    choices:makeChoices(correct,[wrong1, wrong2, wrong3, wrong4])
-  };
-}
-
-function makeCompareQuestion(){
-  let a = rand(20,99);
-  let b = rand(20,99);
-  while(a===b){ b = rand(20,99); }
-
-  let correct = a > b ? a : b;
-  let smaller = a > b ? b : a;
-
-  return {
-    q:`${a} と ${b}、大きい数は？`,
-    correct:String(correct),
-    choices:makeChoices(correct,[smaller, correct+1, smaller+1, correct-1])
-  };
-}
-
-function makeMissingQuestion(){
-  let a = rand(2,9);
-  let b = rand(2,9);
-  let c = a*b;
-
-  return {
-    q:`□に入る数字は？ ${a} × □ = ${c}`,
-    correct:String(b),
-    choices:makeChoices(b,[b+1, b-1, a, c])
-  };
-}
-
-function createRandomQuestion(){
-  const makers = [
-    makeMathQuestion,
-    makeSequenceQuestion,
-    makeReverseQuestion,
-    makeCompareQuestion,
-    makeMissingQuestion
-  ];
-  return makers[rand(0, makers.length-1)]();
+function setQuizLoading(message){
+  quizLoading = true;
+  quizList.innerHTML = `<div class="loadingBox">${message}</div>`;
 }
 
 function renderHomeQuizStats(){
@@ -719,6 +708,26 @@ function renderQuizScore(){
     🕘 前回スコア: ${quizScore.last} / 5
   `;
   renderHomeQuizStats();
+}
+
+function renderQuizSource(){
+  if(quizSource === "internet"){
+    quizSourceInfo.innerHTML = "🌐 出題元: インターネット取得（重複回避強化版）";
+  }else if(quizSource === "mixed"){
+    quizSourceInfo.innerHTML = "🌐＋🧩 出題元: インターネット中心 + 一部予備問題";
+  }else{
+    quizSourceInfo.innerHTML = "⚠️ 出題元: ローカル予備問題のみ（通信失敗時）";
+  }
+}
+
+function renderDuplicateInfo(){
+  const historyCount = loadQuizHistory().length;
+  quizDuplicateInfo.innerHTML = `
+    🔁 重複回避履歴: ${historyCount}件保存中<br>
+    🚫 履歴で除外: ${duplicateStats.historySkipped}件<br>
+    🚫 同回出題で除外: ${duplicateStats.currentSkipped}件<br>
+    📥 今回取得候補数: ${duplicateStats.fetchedTotal}件
+  `;
 }
 
 function resetQuizScore(){
@@ -738,19 +747,284 @@ function resetQuizScore(){
   quizResult.innerHTML = `<div class="quizResult">🧹 クイズスコアをリセットしました</div>`;
 }
 
-function generateQuiz(){
+/* ================= Session Token ================= */
+function isTokenFresh(){
+  if(!quizToken || !quizTokenTime) return false;
+  const sixHours = 6 * 60 * 60 * 1000;
+  return (Date.now() - quizTokenTime) < (sixHours - 10 * 60 * 1000);
+}
+
+async function requestNewToken(){
+  const res = await fetch("https://opentdb.com/api_token.php?command=request");
+  const data = await res.json();
+
+  if(data && data.response_code === 0 && data.token){
+    quizToken = data.token;
+    quizTokenTime = Date.now();
+    saveQuizToken();
+    return quizToken;
+  }
+  throw new Error("token request failed");
+}
+
+async function resetTokenOnServer(){
+  if(!quizToken){
+    return requestNewToken();
+  }
+
+  const res = await fetch(`https://opentdb.com/api_token.php?command=reset&token=${quizToken}`);
+  const data = await res.json();
+
+  if(data && data.response_code === 0){
+    quizTokenTime = Date.now();
+    saveQuizToken();
+    return quizToken;
+  }
+
+  return requestNewToken();
+}
+
+async function ensureQuizToken(forceNew=false){
+  if(!forceNew && isTokenFresh()){
+    return quizToken;
+  }
+  return requestNewToken();
+}
+
+async function waitForRateLimit(){
+  const needWait = 5200 - (Date.now() - lastApiCallAt);
+  if(needWait > 0){
+    await sleep(needWait);
+  }
+  lastApiCallAt = Date.now();
+}
+
+async function fetchTriviaBatch(amount=10){
+  let tries = 0;
+
+  while(tries < 4){
+    tries++;
+    await ensureQuizToken(false);
+    await waitForRateLimit();
+
+    const url = `https://opentdb.com/api.php?amount=${amount}&type=multiple&encode=url3986&token=${quizToken}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if(data.response_code === 0){
+      quizTokenTime = Date.now();
+      saveQuizToken();
+      return Array.isArray(data.results) ? data.results : [];
+    }
+
+    if(data.response_code === 3){
+      await requestNewToken();
+      continue;
+    }
+
+    if(data.response_code === 4){
+      await resetTokenOnServer();
+      continue;
+    }
+
+    if(data.response_code === 5){
+      await sleep(5500);
+      continue;
+    }
+
+    break;
+  }
+
+  throw new Error("trivia fetch failed");
+}
+
+function convertTriviaItem(item){
+  const question = decodeText(item.question);
+  const correct = decodeText(item.correct_answer);
+  const incorrect = (item.incorrect_answers || []).map(x => decodeText(x));
+  const choices = shuffle([correct, ...incorrect]);
+
+  return {
+    q: question,
+    correct: correct,
+    choices: choices,
+    category: decodeText(item.category || ""),
+    difficulty: decodeText(item.difficulty || ""),
+    signature: makeSignature(question, correct),
+    from: "internet"
+  };
+}
+
+/* ================= 予備問題 ================= */
+const fallbackQuestions = [
+  { q:"CPUの意味として最も近いものは？", correct:"中央処理装置", choices:["中央処理装置","画面制御装置","音声処理装置","通信停止装置"] },
+  { q:"URLは主に何を示す？", correct:"Web上の住所", choices:["音量設定","Web上の住所","画像サイズ","電池残量"] },
+  { q:"パスワード管理で望ましいのは？", correct:"使い回しを避ける", choices:["全サイト同じ","紙に公開する","使い回しを避ける","短く単純にする"] },
+  { q:"ブラウザの例として正しいのは？", correct:"Chrome", choices:["Chrome","Excel","Word","Paint"] },
+  { q:"Wi-Fiは主に何のために使う？", correct:"無線通信", choices:["印刷専用","無線通信","画面拡大","音量調整"] },
+  { q:"AIは一般に何の略？", correct:"Artificial Intelligence", choices:["Automatic Internet","Artificial Intelligence","Analog Interface","Advanced Input"] },
+  { q:"検索エンジンに該当するのは？", correct:"Google", choices:["Google","PowerPoint","Photoshop","Bluetooth"] },
+  { q:"メールの件名は何のため？", correct:"内容の要約", choices:["本文を隠す","内容の要約","容量を増やす","削除防止"] },
+  { q:"保存前の一時データ置き場として近いのは？", correct:"メモリ", choices:["紙","メモリ","机","スピーカー"] },
+  { q:"二段階認証の目的は？", correct:"安全性向上", choices:["通信速度低下","安全性向上","画面明るさ調整","印刷品質向上"] },
+  { q:"クラウド保存の特徴として近いのは？", correct:"ネット経由で保存", choices:["紙に保存","ネット経由で保存","電源を切る","印刷だけ可能"] },
+  { q:"ダウンロードは何をすること？", correct:"受け取る", choices:["消す","送る","受け取る","圧縮だけする"] },
+  { q:"アップロードは何をすること？", correct:"送る", choices:["受け取る","閉じる","送る","印刷する"] },
+  { q:"リンクを開く前に確認したいのは？", correct:"URLの行き先", choices:["画面の色","URLの行き先","文字の大きさ","音量"] },
+  { q:"インターネット接続がないと使いにくいものは？", correct:"Web検索", choices:["懐中電灯","紙の本","Web検索","電卓"] },
+  { q:"SNSで注意したいことは？", correct:"個人情報の公開", choices:["個人情報の公開","文字数ゼロ","背景色","電源の色"] },
+  { q:"再起動は何のために行うことが多い？", correct:"一時的不調の改善", choices:["本体を冷凍","一時的不調の改善","画面を割る","容量を紙に写す"] },
+  { q:"QRコードを読み取ると何が起きることが多い？", correct:"URLや情報を開く", choices:["音量が上がる","電源が切れる","URLや情報を開く","色が変わる"] },
+  { q:"OSの例として正しいのは？", correct:"Windows", choices:["Windows","JPEG","USB","PDF"] },
+  { q:"ブラウザでページ更新をする目的は？", correct:"最新表示にする", choices:["色を変える","音を消す","最新表示にする","容量を減らす"] },
+  { q:"迷惑メールへの対応で適切なのは？", correct:"不用意に開かない", choices:["全部返信","不用意に開かない","必ず転送","印刷して放置"] },
+  { q:"AIチャットに入力しない方がよいものは？", correct:"機密情報", choices:["天気の質問","機密情報","一般的な相談","献立の相談"] },
+  { q:"画像ファイル形式の例は？", correct:"PNG", choices:["PNG","TXT","CSV","DOCX"] },
+  { q:"インターネットで情報確認するとき大切なのは？", correct:"複数ソース確認", choices:["最初の1件だけ","複数ソース確認","題名だけ見る","日付を見ない"] },
+  { q:"Web会議で必要になりやすいものは？", correct:"マイク", choices:["定規","マイク","消しゴム","はさみ"] }
+];
+
+function generateFallbackQuiz(count, currentSet, historySet){
+  const pool = shuffle(fallbackQuestions).map(item=>{
+    const signature = makeSignature(item.q, item.correct);
+    return {
+      q:item.q,
+      correct:item.correct,
+      choices:shuffle(item.choices),
+      category:"Fallback",
+      difficulty:"easy",
+      signature,
+      from:"local"
+    };
+  });
+
+  const picked = [];
+
+  for(const item of pool){
+    if(picked.length >= count) break;
+    if(currentSet.has(item.signature)) continue;
+    if(historySet.has(item.signature)) continue;
+    currentSet.add(item.signature);
+    picked.push(item);
+  }
+
+  if(picked.length < count){
+    for(const item of pool){
+      if(picked.length >= count) break;
+      if(currentSet.has(item.signature)) continue;
+      currentSet.add(item.signature);
+      picked.push(item);
+    }
+  }
+
+  return picked;
+}
+
+/* ================= 重複回避つきクイズ生成 ================= */
+async function buildUniqueInternetQuiz(targetCount=5){
+  const history = loadQuizHistory();
+  const recentHistory = history.slice(-200);
+  const historySet = new Set(recentHistory);
+  const currentSet = new Set();
+  const selected = [];
+
+  duplicateStats = {
+    historySkipped: 0,
+    currentSkipped: 0,
+    fetchedTotal: 0,
+    mode: "internet"
+  };
+
+  let phase = 1;
+  let attempts = 0;
+
+  while(selected.length < targetCount && attempts < 4){
+    attempts++;
+    const batch = await fetchTriviaBatch(15);
+    duplicateStats.fetchedTotal += batch.length;
+
+    for(const raw of batch){
+      const item = convertTriviaItem(raw);
+      if(currentSet.has(item.signature)){
+        duplicateStats.currentSkipped++;
+        continue;
+      }
+      if(historySet.has(item.signature)){
+        duplicateStats.historySkipped++;
+        continue;
+      }
+
+      currentSet.add(item.signature);
+      selected.push(item);
+      if(selected.length >= targetCount) break;
+    }
+  }
+
+  if(selected.length < targetCount){
+    phase = 2;
+    let relaxedAttempts = 0;
+
+    while(selected.length < targetCount && relaxedAttempts < 2){
+      relaxedAttempts++;
+      const batch = await fetchTriviaBatch(10);
+      duplicateStats.fetchedTotal += batch.length;
+
+      for(const raw of batch){
+        const item = convertTriviaItem(raw);
+        if(currentSet.has(item.signature)){
+          duplicateStats.currentSkipped++;
+          continue;
+        }
+        currentSet.add(item.signature);
+        selected.push(item);
+        if(selected.length >= targetCount) break;
+      }
+    }
+  }
+
+  let mode = (phase === 1 || selected.length === targetCount) ? "internet" : "mixed";
+
+  if(selected.length < targetCount){
+    const fallback = generateFallbackQuiz(targetCount - selected.length, currentSet, historySet);
+    selected.push(...fallback);
+    mode = selected.some(x => x.from === "internet") ? "mixed" : "local";
+  }
+
+  appendQuizHistory(selected.map(x => x.signature));
+  duplicateStats.mode = mode;
+
+  return { questions: selected.slice(0, targetCount), mode };
+}
+
+async function generateQuiz(){
+  if(quizLoading) return;
+
   quizData = [];
   quizSelections = [null, null, null, null, null];
   quizAnswered = false;
-  quizList.innerHTML = "";
   quizResult.innerHTML = "";
 
-  for(let i=0;i<5;i++){
-    quizData.push(createRandomQuestion());
+  renderQuizScore();
+  renderDuplicateInfo();
+  setQuizLoading("🌐 インターネットから重複の少ない問題を取得中...");
+
+  try{
+    const result = await buildUniqueInternetQuiz(5);
+    quizData = result.questions;
+    quizSource = result.mode;
+  }catch(e){
+    const currentSet = new Set();
+    const historySet = new Set(loadQuizHistory().slice(-200));
+    quizData = generateFallbackQuiz(5, currentSet, historySet);
+    appendQuizHistory(quizData.map(x => x.signature));
+    quizSource = "local";
+    duplicateStats.mode = "local";
   }
 
+  quizLoading = false;
+  renderQuizSource();
+  renderDuplicateInfo();
   renderQuiz();
-  renderQuizScore();
 }
 
 function renderQuiz(){
@@ -759,6 +1033,11 @@ function renderQuiz(){
   quizData.forEach((item, i)=>{
     let div = document.createElement("div");
     div.className = "quizItem";
+
+    let meta = "";
+    if(item.category || item.difficulty){
+      meta = `<div class="quizMeta">分類: ${item.category || "-"} / 難易度: ${item.difficulty || "-"}</div>`;
+    }
 
     let choicesHtml = item.choices.map((choice, idx)=>{
       let cls = "choiceBtn";
@@ -783,6 +1062,7 @@ function renderQuiz(){
     }).join("");
 
     div.innerHTML = `
+      ${meta}
       <div class="quizQuestion">Q${i+1}. ${item.q}</div>
       ${choicesHtml}
     `;
@@ -792,13 +1072,13 @@ function renderQuiz(){
 }
 
 function selectChoice(questionIndex, choiceIndex){
-  if(quizAnswered) return;
+  if(quizAnswered || quizLoading) return;
   quizSelections[questionIndex] = choiceIndex;
   renderQuiz();
 }
 
 function submitQuiz(){
-  if(quizAnswered) return;
+  if(quizAnswered || quizLoading || quizData.length === 0) return;
 
   quizAnswered = true;
   let score = 0;
@@ -853,6 +1133,8 @@ function submitQuiz(){
 ui();
 renderQuizScore();
 renderHomeQuizStats();
+renderQuizSource();
+renderDuplicateInfo();
 </script>
 
 </body>
