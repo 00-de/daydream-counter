@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>題目カウンター DayDreamプラス DX+</title>
+<title>題目カウンター DayDreamプラス DX+ 完全版</title>
 
 <style>
 
@@ -11,37 +11,37 @@ body{
   margin:0;
   font-family:sans-serif;
   background:linear-gradient(135deg,#ffb6f9,#b5d7ff,#ffe59e);
-  transition:0.3s;
+  min-height:100vh;
 }
 
 .header{
   position:sticky;
   top:0;
-  padding:12px;
+  padding:14px;
   text-align:center;
+  font-size:20px;
   font-weight:bold;
-  font-size:18px;
-  background:rgba(255,255,255,0.35);
-  backdrop-filter:blur(6px);
-  z-index:10;
+  background:rgba(255,255,255,0.4);
+  backdrop-filter:blur(8px);
+  z-index:999;
 }
 
 .card{
-  background:#fff;
+  background:white;
   margin:12px;
   padding:14px;
-  border-radius:14px;
+  border-radius:16px;
   box-shadow:0 6px 14px rgba(0,0,0,0.15);
 }
 
 button{
-  padding:10px 12px;
-  margin:4px;
   border:none;
-  border-radius:10px;
+  border-radius:12px;
+  padding:12px;
+  margin:4px;
+  font-size:14px;
   font-weight:bold;
   cursor:pointer;
-  font-size:14px;
 }
 
 .startBtn{
@@ -66,10 +66,10 @@ button{
 
 input,textarea{
   width:100%;
+  box-sizing:border-box;
   padding:10px;
   margin-top:8px;
   border-radius:10px;
-  box-sizing:border-box;
   border:1px solid #ccc;
   font-size:16px;
 }
@@ -88,11 +88,52 @@ input,textarea{
 }
 
 .ach{
-  margin-top:8px;
+  margin-top:10px;
   padding:10px;
+  border-radius:12px;
   background:#fff3cd;
-  border-radius:10px;
-  line-height:1.6;
+  line-height:1.7;
+}
+
+.quizItem{
+  background:#f7fbff;
+  padding:12px;
+  border-radius:12px;
+  margin-top:12px;
+}
+
+.quizQuestion{
+  font-weight:bold;
+  margin-bottom:10px;
+  line-height:1.7;
+}
+
+.choiceBtn{
+  display:block;
+  width:100%;
+  text-align:left;
+  background:#eef7ff;
+  color:#333;
+  margin-top:8px;
+}
+
+.choiceBtn.correct{
+  background:#c8e6c9;
+  border:2px solid #2e7d32;
+}
+
+.choiceBtn.wrong{
+  background:#ffcdd2;
+  border:2px solid #c62828;
+}
+
+.quizResult{
+  margin-top:14px;
+  padding:12px;
+  border-radius:12px;
+  background:#e8f5e9;
+  line-height:1.8;
+  font-weight:bold;
 }
 
 .space{
@@ -149,60 +190,10 @@ input,textarea{
   100%{transform:translate(0,0);}
 }
 
-.quizItem{
-  background:#f7fbff;
-  border-radius:12px;
-  padding:12px;
-  margin-top:10px;
-}
-
-.quizQuestion{
-  font-weight:bold;
-  margin-bottom:8px;
-  line-height:1.7;
-}
-
-.choiceBtn{
-  display:block;
-  width:100%;
-  text-align:left;
-  background:#eef7ff;
-  color:#333;
+.original{
   margin-top:8px;
-  border:2px solid transparent;
-  border-radius:12px;
-  padding:12px;
-  font-weight:bold;
-}
-
-.choiceBtn.correct{
-  background:#c8e6c9;
-  border-color:#2e7d32;
-}
-
-.choiceBtn.wrong{
-  background:#ffcdd2;
-  border-color:#c62828;
-}
-
-.quizResult{
-  margin-top:12px;
-  padding:12px;
-  border-radius:12px;
-  background:#e8f5e9;
-  font-weight:bold;
-  line-height:1.7;
-}
-
-.timeMeta{
   font-size:12px;
-  color:#555;
-  margin-top:6px;
-}
-
-.inlineTime{
-  display:inline-block;
-  margin-right:10px;
+  color:#666;
 }
 
 </style>
@@ -213,28 +204,20 @@ input,textarea{
 <div id="space" class="space"></div>
 
 <div class="header">
-🌈 題目カウンター DayDreamプラス DX+
+🌈 題目カウンター DayDreamプラス DX+ 完全版
 </div>
 
 <div id="main">
 
 <div class="card">
+
 ⏰ <span id="clock"></span><br>
+🚀 開始時刻: <span id="startTime">未開始</span><br>
+📅 日: <span id="daily">0</span><br>
+🗓️ 月: <span id="monthly">0</span><br>
+🏆 総: <span id="total">0</span><br>
+🧠 クイズ最高点: <span id="bestScore">0</span>/5
 
-🚀 開始:
-<span id="startTime">未開始</span><br>
-
-📅 日:
-<span id="daily">0</span><br>
-
-🗓️ 月:
-<span id="monthly">0</span><br>
-
-🏆 総:
-<span id="total">0</span><br>
-
-🧠 クイズ最高点:
-<span id="bestScore">0</span>/5
 </div>
 
 <div class="card">
@@ -256,11 +239,11 @@ input,textarea{
 </button>
 
 <button class="navBtn" onclick="openPrayer()">
-御祈念
+🙏 御祈念
 </button>
 
 <button class="quizBtn" onclick="openQuiz()">
-🧠クイズ
+🧠 クイズ
 </button>
 
 </div>
@@ -268,13 +251,14 @@ input,textarea{
 <div class="card">
 
 1分あたり
+
 <input id="per" type="number" value="60">
 
 1日の目標
+
 <input id="goal" type="number" value="3000">
 
-達成率
-<span id="percent">0</span>%
+達成率 <span id="percent">0</span>%
 
 <div class="bar">
 <div class="fill" id="fill"></div>
@@ -295,12 +279,9 @@ input,textarea{
 
 <div class="card">
 
-<h3>🙏御祈念</h3>
+<h3>🙏 御祈念</h3>
 
-<textarea
-id="prayer"
-maxlength="300"
-placeholder="御祈念内容を入力"></textarea>
+<textarea id="prayer"></textarea>
 
 <button class="startBtn" onclick="savePrayer()">
 保存
@@ -313,6 +294,7 @@ placeholder="御祈念内容を入力"></textarea>
 <div id="prayerList"></div>
 
 </div>
+
 </div>
 
 <!-- クイズ -->
@@ -321,7 +303,7 @@ placeholder="御祈念内容を入力"></textarea>
 
 <div class="card">
 
-<h3>🧠 脳スッキリクイズ</h3>
+<h3>🧠 インターネットクイズ</h3>
 
 <div id="quizList"></div>
 
@@ -330,7 +312,7 @@ placeholder="御祈念内容を入力"></textarea>
 </button>
 
 <button class="quizBtn" onclick="generateQuiz()">
-問題変更
+問題更新
 </button>
 
 <button class="navBtn" onclick="backHome()">
@@ -340,80 +322,43 @@ placeholder="御祈念内容を入力"></textarea>
 <div id="quizResult"></div>
 
 </div>
+
 </div>
 
 <script>
 
+/* ================= 保存 ================= */
+
+const KEY="ddd_counter_final";
+const PRAY="ddd_prayer_final";
+const QUIZ="ddd_quiz_final";
+
 /* ================= DOM ================= */
 
-const main = document.getElementById("main");
-const prayerPage = document.getElementById("prayerPage");
-const prayerList = document.getElementById("prayerList");
-const prayer = document.getElementById("prayer");
+const daily=document.getElementById("daily");
+const monthly=document.getElementById("monthly");
+const total=document.getElementById("total");
+const clock=document.getElementById("clock");
+const btn=document.getElementById("btn");
+const startTime=document.getElementById("startTime");
+const fill=document.getElementById("fill");
+const percent=document.getElementById("percent");
+const goal=document.getElementById("goal");
+const per=document.getElementById("per");
+const ach=document.getElementById("ach");
+const space=document.getElementById("space");
 
-const quizPage = document.getElementById("quizPage");
-const quizList = document.getElementById("quizList");
-const quizResult = document.getElementById("quizResult");
+const prayer=document.getElementById("prayer");
+const prayerList=document.getElementById("prayerList");
 
-const clock = document.getElementById("clock");
-const startTime = document.getElementById("startTime");
-
-const daily = document.getElementById("daily");
-const monthly = document.getElementById("monthly");
-const total = document.getElementById("total");
-
-const btn = document.getElementById("btn");
-
-const per = document.getElementById("per");
-const goal = document.getElementById("goal");
-
-const percent = document.getElementById("percent");
-const fill = document.getElementById("fill");
-
-const bestScore = document.getElementById("bestScore");
-
-const space = document.getElementById("space");
-
-/* ================= JST ================= */
-
-const JST_TIME_ZONE = "Asia/Tokyo";
-
-const jstDateTimeFormatter =
-new Intl.DateTimeFormat("ja-JP",{
-  timeZone:JST_TIME_ZONE,
-  year:"numeric",
-  month:"2-digit",
-  day:"2-digit",
-  hour:"2-digit",
-  minute:"2-digit",
-  second:"2-digit",
-  hour12:false
-});
-
-function formatJSTDateTime(value){
-
-  if(!value) return "未開始";
-
-  const d =
-    value instanceof Date
-    ? value
-    : new Date(value);
-
-  return jstDateTimeFormatter.format(d)
-    + " JST";
-}
-
-/* ================= 保存キー ================= */
-
-const KEY = "dx_all_final_v5";
-const PRAY = "dx_pray_final_v5";
-const QUIZ = "dx_quiz_score_v5";
+const quizList=document.getElementById("quizList");
+const quizResult=document.getElementById("quizResult");
+const bestScore=document.getElementById("bestScore");
 
 /* ================= 状態 ================= */
 
-let state =
-JSON.parse(localStorage.getItem(KEY))
-||{
+let state=
+JSON.parse(localStorage.getItem(KEY))||{
   daily:0,
   monthly:0,
   total:0,
@@ -424,17 +369,12 @@ JSON.parse(localStorage.getItem(KEY))
   done:false
 };
 
-let quizScore =
-JSON.parse(localStorage.getItem(QUIZ))
-||{
+let quizScore=
+JSON.parse(localStorage.getItem(QUIZ))||{
   best:0
 };
 
-let stage = {};
-
-let quizData = [];
-let quizSelections = [];
-let quizAnswered = false;
+bestScore.textContent=quizScore.best;
 
 /* ================= 保存 ================= */
 
@@ -446,44 +386,44 @@ function saveQuiz(){
   localStorage.setItem(QUIZ,JSON.stringify(quizScore));
 }
 
-/* ================= 時間 ================= */
+/* ================= JST ================= */
 
-function createTimePair(){
+function nowJST(){
 
-  const now = Date.now();
-
-  return{
-    sentAt:formatJSTDateTime(now),
-    receivedAt:formatJSTDateTime(now)
-  };
+  return new Date().toLocaleString(
+    "ja-JP",
+    {
+      timeZone:"Asia/Tokyo"
+    }
+  );
 }
 
-function buildTimeMetaHTML(sentAt,receivedAt){
+/* ================= 時計 ================= */
 
-  return `
-  <div class="timeMeta">
-    <span class="inlineTime">
-      📤送信: ${sentAt}
-    </span>
+function updateClock(){
 
-    <span class="inlineTime">
-      📥受信: ${receivedAt}
-    </span>
-  </div>
-  `;
+  clock.textContent=nowJST();
+
+  ui();
 }
+
+setInterval(updateClock,1000);
+
+updateClock();
 
 /* ================= カウント ================= */
 
 function get(){
 
-  if(!state.running) return state;
+  if(!state.running){
+    return state;
+  }
 
-  let sec =
-    (Date.now()-state.start)/1000;
+  let sec=
+  (Date.now()-state.start)/1000;
 
-  let add =
-    sec*(state.per/60);
+  let add=
+  sec*(state.per/60);
 
   return{
     daily:state.daily+add,
@@ -496,113 +436,80 @@ function get(){
 
 function ui(){
 
-  let c = get();
+  let c=get();
 
-  daily.textContent =
-    Math.floor(c.daily);
-
-  monthly.textContent =
-    Math.floor(c.monthly);
-
-  total.textContent =
-    Math.floor(c.total);
+  daily.textContent=Math.floor(c.daily);
+  monthly.textContent=Math.floor(c.monthly);
+  total.textContent=Math.floor(c.total);
 
   if(state.fixedStart){
 
-    startTime.textContent =
-      formatJSTDateTime(state.fixedStart);
+    startTime.textContent=
+    new Date(state.fixedStart)
+    .toLocaleString(
+      "ja-JP",
+      {
+        timeZone:"Asia/Tokyo"
+      }
+    );
 
   }else{
 
-    startTime.textContent = "未開始";
+    startTime.textContent="未開始";
   }
 
-  btn.textContent =
-    state.running
-    ? "⏹停止"
-    : "▶開始";
+  btn.textContent=
+  state.running
+  ? "⏹停止"
+  : "▶開始";
 
-  bestScore.textContent =
-    quizScore.best;
+  let g=
+  Number(goal.value||1);
 
-  per.value =
-    state.per || 60;
+  let p=
+  Math.min(
+    100,
+    Math.floor((c.daily/g)*100)
+  );
 
-  let g =
-    Number(goal.value || 1);
+  percent.textContent=p;
 
-  let p =
-    Math.min(
-      100,
-      Math.floor((c.daily/g)*100)
-    );
-
-  percent.textContent = p;
-
-  fill.style.width = p + "%";
-
-  checkDaily(c);
-  checkStage(c.total);
+  fill.style.width=p+"%";
 
   save();
 }
-
-/* ================= 時計 ================= */
-
-function updateClock(){
-
-  clock.textContent =
-    formatJSTDateTime(Date.now());
-
-  ui();
-}
-
-updateClock();
-
-setInterval(updateClock,1000);
 
 /* ================= 開始停止 ================= */
 
 function toggle(){
 
-  state.per =
-    Number(per.value || 60);
+  state.per=
+  Number(per.value||60);
 
   if(!state.running){
 
-    const now = Date.now();
+    const now=Date.now();
 
-    state.running = true;
+    state.running=true;
 
-    state.start = now;
+    state.start=now;
 
     if(!state.fixedStart){
-      state.fixedStart = now;
+      state.fixedStart=now;
     }
-
-    startTime.textContent =
-      formatJSTDateTime(state.fixedStart);
-
-    btn.textContent = "⏹停止";
-
-    save();
-
-    return;
 
   }else{
 
-    let c = get();
+    let c=get();
 
-    state.daily = c.daily;
-    state.monthly = c.monthly;
-    state.total = c.total;
+    state.daily=c.daily;
+    state.monthly=c.monthly;
+    state.total=c.total;
 
-    state.running = false;
-
-    btn.textContent = "▶開始";
-
-    save();
+    state.running=false;
   }
+
+  save();
 
   ui();
 }
@@ -611,56 +518,38 @@ function toggle(){
 
 function resetDay(){
 
-  state.daily = 0;
-  state.done = false;
-
-  state.fixedStart = 0;
-
+  state.daily=0;
   save();
-
   ui();
 }
 
 function resetMonth(){
 
-  state.monthly = 0;
-
+  state.monthly=0;
   save();
-
   ui();
 }
 
 function resetTotal(){
 
-  state.total = 0;
-
+  state.total=0;
   save();
-
   ui();
 }
 
-/* ================= 達成 ================= */
-
-function checkDaily(c){
-
-  let g =
-    Number(goal.value || 1);
-
-  if(state.done) return;
-
-  if(c.daily >= g){
-
-    state.done = true;
-
-    save();
-
-    add("🌅 1日の目標達成！");
-
-    screenFX();
-  }
-}
-
 /* ================= 演出 ================= */
+
+function add(text){
+
+  let d=
+  document.createElement("div");
+
+  d.className="ach";
+
+  d.innerHTML=text;
+
+  ach.prepend(d);
+}
 
 function screenFX(){
 
@@ -678,122 +567,65 @@ function screenFX(){
   },5000);
 }
 
-function add(text){
-
-  let box =
-    document.getElementById("ach");
-
-  if(!box) return;
-
-  const timePair =
-    createTimePair();
-
-  let d =
-    document.createElement("div");
-
-  d.className = "ach";
-
-  d.innerHTML = `
-    <div>${text}</div>
-    ${buildTimeMetaHTML(
-      timePair.sentAt,
-      timePair.receivedAt
-    )}
-  `;
-
-  box.prepend(d);
-}
-
-/* ================= 段階 ================= */
-
-function checkStage(t){
-
-  if(t>=10000 && !stage[10000]){
-    stage[10000]=1;
-    add("🥁 大地：スタート");
-    screenFX();
-  }
-
-  if(t>=50000 && !stage[50000]){
-    stage[50000]=1;
-    add("🎀 葵：いい感じ");
-    screenFX();
-  }
-
-  if(t>=100000 && !stage[100000]){
-    stage[100000]=1;
-    add("🎸 蓮：積み重ね");
-    screenFX();
-  }
-
-  if(t>=200000 && !stage[200000]){
-    stage[200000]=1;
-    add("🎤 結衣：届いた");
-    screenFX();
-  }
-
-  if(t>=500000 && !stage[500000]){
-    stage[500000]=1;
-    add("🎹 悠真：すごい");
-    screenFX();
-  }
-}
-
-/* ================= 宇宙 ================= */
+/* ================= 宇宙モード ================= */
 
 function createSpace(){
 
-  space.style.display = "block";
+  space.style.display="block";
 
-  space.innerHTML = "";
+  space.innerHTML="";
 
   for(let i=0;i<120;i++){
 
-    let s =
-      document.createElement("div");
+    let s=
+    document.createElement("div");
 
-    s.className = "star";
+    s.className="star";
 
-    s.style.left =
-      Math.random()*100 + "%";
+    s.style.left=
+    Math.random()*100+"%";
 
-    s.style.top =
-      Math.random()*100 + "%";
+    s.style.top=
+    Math.random()*100+"%";
 
     space.appendChild(s);
   }
+
+  setTimeout(()=>{
+    space.style.display="none";
+  },8000);
 }
 
-/* ================= 画面切替 ================= */
+/* ================= ページ切替 ================= */
 
-function hideAllPages(){
+function hideAll(){
 
-  main.style.display = "none";
-  prayerPage.style.display = "none";
-  quizPage.style.display = "none";
+  document.getElementById("main").style.display="none";
+  document.getElementById("prayerPage").style.display="none";
+  document.getElementById("quizPage").style.display="none";
 }
 
 function backHome(){
 
-  hideAllPages();
+  hideAll();
 
-  main.style.display = "block";
+  document.getElementById("main").style.display="block";
 }
 
 function openPrayer(){
 
-  hideAllPages();
+  hideAll();
 
-  prayerPage.style.display = "block";
+  document.getElementById("prayerPage").style.display="block";
 
   renderPrayer();
 }
 
 function openQuiz(){
 
-  hideAllPages();
+  hideAll();
 
-  quizPage.style.display = "block";
+  document.getElementById("quizPage").style.display="block";
 
   generateQuiz();
 }
@@ -802,25 +634,16 @@ function openQuiz(){
 
 function savePrayer(){
 
-  let list =
-    JSON.parse(
-      localStorage.getItem(PRAY)
-      || "[]"
-    );
+  if(!prayer.value.trim()) return;
 
-  if(!prayer.value.trim()){
-
-    alert("入力してください");
-
-    return;
-  }
-
-  const timePair =
-    createTimePair();
+  let list=
+  JSON.parse(
+    localStorage.getItem(PRAY)||"[]"
+  );
 
   list.unshift({
     text:prayer.value,
-    date:timePair.sentAt,
+    date:nowJST(),
     ok:false
   });
 
@@ -829,59 +652,55 @@ function savePrayer(){
     JSON.stringify(list)
   );
 
-  prayer.value = "";
+  prayer.value="";
 
   renderPrayer();
 }
 
 function renderPrayer(){
 
-  let list =
-    JSON.parse(
-      localStorage.getItem(PRAY)
-      || "[]"
-    );
+  let list=
+  JSON.parse(
+    localStorage.getItem(PRAY)||"[]"
+  );
 
-  prayerList.innerHTML = "";
+  prayerList.innerHTML="";
 
   list.forEach((x,i)=>{
 
-    let d =
-      document.createElement("div");
+    let d=
+    document.createElement("div");
 
-    d.className = "ach";
+    d.className="ach";
 
-    d.innerHTML = `
-      <div>${x.date}</div>
-      <div>🙏 ${x.text}</div>
+    d.innerHTML=`
 
-      <button onclick="toggleOk(${i})"
-      style="
-      background:${x.ok?'red':'#ccc'};
-      border-radius:50%;
-      width:40px;
-      height:40px;
-      color:white;
-      ">◎</button>
+      ${x.date}<br>
+      🙏 ${x.text}<br><br>
+
+      <button onclick="toggleOk(${i})">
+        ${x.ok?"⭕達成":"⭕未達成"}
+      </button>
 
       <button onclick="delPrayer(${i})">
-      削除
+        削除
       </button>
+
     `;
 
     prayerList.appendChild(d);
+
   });
 }
 
 function toggleOk(i){
 
-  let list =
-    JSON.parse(
-      localStorage.getItem(PRAY)
-      || "[]"
-    );
+  let list=
+  JSON.parse(
+    localStorage.getItem(PRAY)||"[]"
+  );
 
-  list[i].ok = !list[i].ok;
+  list[i].ok=!list[i].ok;
 
   localStorage.setItem(
     PRAY,
@@ -893,11 +712,10 @@ function toggleOk(i){
 
 function delPrayer(i){
 
-  let list =
-    JSON.parse(
-      localStorage.getItem(PRAY)
-      || "[]"
-    );
+  let list=
+  JSON.parse(
+    localStorage.getItem(PRAY)||"[]"
+  );
 
   list.splice(i,1);
 
@@ -911,185 +729,356 @@ function delPrayer(i){
 
 /* ================= クイズ ================= */
 
-const questions = [
-
-{
-q:"AIの意味は？",
-a:"Artificial Intelligence",
-c:[
-"Automatic Input",
-"Artificial Intelligence",
-"Advanced Internet",
-"Active Icon"
-]
-},
-
-{
-q:"Wi-Fiは何？",
-a:"無線通信",
-c:[
-"無線通信",
-"冷蔵機能",
-"音量機能",
-"印刷機能"
-]
-},
-
-{
-q:"URLは？",
-a:"Web上の住所",
-c:[
-"電池",
-"CPU",
-"Web上の住所",
-"音量"
-]
-},
-
-{
-q:"OSの例は？",
-a:"Windows",
-c:[
-"PNG",
-"USB",
-"Windows",
-"PDF"
-]
-},
-
-{
-q:"検索エンジンは？",
-a:"Google",
-c:[
-"Excel",
-"Google",
-"Paint",
-"Bluetooth"
-]
-}
-
-];
+let quizData=[];
+let quizSelections=[];
+let quizAnswered=false;
 
 function shuffle(arr){
-  return [...arr].sort(()=>Math.random()-0.5);
+
+  return [...arr].sort(
+    ()=>Math.random()-0.5
+  );
 }
 
-function generateQuiz(){
+function decodeHTML(str){
 
-  quizData =
-    shuffle(questions).slice(0,5);
+  const txt=
+  document.createElement("textarea");
 
-  quizSelections =
-    [null,null,null,null,null];
+  txt.innerHTML=str;
 
-  quizAnswered = false;
-
-  quizResult.innerHTML = "";
-
-  renderQuiz();
+  return txt.value;
 }
+
+/* 翻訳 */
+
+async function translateText(text){
+
+  try{
+
+    const url=
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|ja`;
+
+    const res=
+      await fetch(url);
+
+    const data=
+      await res.json();
+
+    if(
+      data &&
+      data.responseData &&
+      data.responseData.translatedText
+    ){
+      return data.responseData.translatedText;
+    }
+
+    return text;
+
+  }catch(e){
+
+    return text;
+  }
+}
+
+/* クイズ生成 */
+
+async function generateQuiz(){
+
+  quizList.innerHTML=`
+    <div class="ach">
+      🌐 インターネットから問題取得中...
+    </div>
+  `;
+
+  quizResult.innerHTML="";
+
+  quizAnswered=false;
+
+  try{
+
+    const randomSeed=
+      Math.random();
+
+    const res=
+      await fetch(
+        `https://opentdb.com/api.php?amount=5&type=multiple&encode=url3986&t=${randomSeed}`
+      );
+
+    const data=
+      await res.json();
+
+    quizData=[];
+
+    for(const item of data.results){
+
+      const qOriginal=
+        decodeHTML(
+          decodeURIComponent(item.question)
+        );
+
+      const aOriginal=
+        decodeHTML(
+          decodeURIComponent(item.correct_answer)
+        );
+
+      const incorrectOriginal=
+        item.incorrect_answers.map(x=>
+          decodeHTML(
+            decodeURIComponent(x)
+          )
+        );
+
+      const qJa=
+        await translateText(qOriginal);
+
+      const aJa=
+        await translateText(aOriginal);
+
+      let incorrectJa=[];
+
+      for(const txt of incorrectOriginal){
+
+        incorrectJa.push(
+          await translateText(txt)
+        );
+      }
+
+      const choiceObjects=
+        shuffle([
+
+          {
+            en:aOriginal,
+            ja:aJa,
+            correct:true
+          },
+
+          ...incorrectOriginal.map((x,i)=>({
+            en:x,
+            ja:incorrectJa[i],
+            correct:false
+          }))
+
+        ]);
+
+      quizData.push({
+
+        q:qJa,
+        qOriginal:qOriginal,
+
+        a:aJa,
+
+        choices:
+          choiceObjects.map(x=>x.ja),
+
+        correctIndex:
+          choiceObjects.findIndex(x=>x.correct),
+
+        category:
+          await translateText(item.category),
+
+        difficulty:
+          await translateText(item.difficulty)
+
+      });
+
+    }
+
+    quizSelections=
+      [null,null,null,null,null];
+
+    renderQuiz();
+
+  }catch(e){
+
+    quizList.innerHTML=`
+      <div class="ach">
+        ⚠️ ネット取得失敗
+      </div>
+    `;
+  }
+}
+
+/* クイズ描画 */
 
 function renderQuiz(){
 
-  quizList.innerHTML = "";
+  quizList.innerHTML="";
 
   quizData.forEach((q,i)=>{
 
-    let div =
+    let div=
       document.createElement("div");
 
-    div.className = "quizItem";
+    div.className="quizItem";
 
-    let choices =
-      shuffle([...q.c]);
+    div.innerHTML=`
 
-    q.currentChoices = choices;
-
-    div.innerHTML = `
       <div class="quizQuestion">
-      Q${i+1}. ${q.q}
+        Q${i+1}. ${q.q}
       </div>
 
-      ${choices.map((x,idx)=>`
-      <button
-      class="choiceBtn"
-      onclick="selectChoice(${i},${idx})">
-      ${idx+1}. ${x}
-      </button>
+      <div style="
+        font-size:12px;
+        color:#666;
+        margin-bottom:8px;
+      ">
+        🌍 ${q.category}
+        /
+        ⭐ ${q.difficulty}
+      </div>
+
+      ${q.choices.map((c,idx)=>`
+
+        <button
+          class="choiceBtn"
+          onclick="selectChoice(${i},${idx})">
+
+          ${idx+1}. ${c}
+
+        </button>
+
       `).join("")}
+
+      <div class="original">
+        原文: ${q.qOriginal}
+      </div>
+
     `;
 
     quizList.appendChild(div);
+
   });
 }
+
+/* 選択 */
 
 function selectChoice(qi,ci){
 
   if(quizAnswered) return;
 
-  quizSelections[qi] = ci;
+  quizSelections[qi]=ci;
+
+  renderQuiz();
+
+  const items=
+    document.querySelectorAll(".quizItem");
+
+  const item=
+    items[qi];
+
+  if(item){
+
+    const btns=
+      item.querySelectorAll(".choiceBtn");
+
+    btns.forEach(btn=>{
+      btn.style.border=
+        "2px solid transparent";
+    });
+
+    btns[ci].style.border=
+      "2px solid #00acc1";
+  }
 }
+
+/* 答え合わせ */
 
 function submitQuiz(){
 
   if(quizAnswered) return;
 
-  quizAnswered = true;
+  quizAnswered=true;
 
-  let score = 0;
+  let score=0;
 
-  let html = "";
+  let html="";
+
+  const items=
+    document.querySelectorAll(".quizItem");
 
   quizData.forEach((q,i)=>{
 
-    let idx =
+    const idx=
       quizSelections[i];
 
-    let selected =
-      q.currentChoices[idx];
+    const buttons=
+      items[i]
+      .querySelectorAll(".choiceBtn");
 
-    if(selected === q.a){
+    buttons.forEach((btn,bIndex)=>{
+
+      if(bIndex===q.correctIndex){
+        btn.classList.add("correct");
+      }
+
+      if(
+        bIndex===idx &&
+        bIndex!==q.correctIndex
+      ){
+        btn.classList.add("wrong");
+      }
+
+    });
+
+    if(idx===q.correctIndex){
 
       score++;
 
-      html += `
-      <div class="ach">
-      ✅ Q${i+1} 正解
-      </div>
+      html+=`
+        <div class="ach">
+          ✅ Q${i+1} 正解
+        </div>
       `;
 
     }else{
 
-      html += `
-      <div class="ach">
-      ❌ Q${i+1}
-      正解: ${q.a}
-      </div>
+      html+=`
+        <div class="ach">
+          ❌ Q${i+1}<br>
+          正解: ${q.a}
+        </div>
       `;
     }
+
   });
 
-  if(score > quizScore.best){
+  if(score>quizScore.best){
 
-    quizScore.best = score;
+    quizScore.best=score;
 
     saveQuiz();
+
+    bestScore.textContent=
+      quizScore.best;
   }
 
-  quizResult.innerHTML = `
+  quizResult.innerHTML=`
+
     <div class="quizResult">
-      結果 ${score}/5
+
+      🧠 結果 ${score}/5
+
+      <br><br>
+
+      ${
+        score===5
+        ?"🌟全問正解！"
+        :score>=3
+        ?"✨いい感じ！"
+        :"💡もう一回挑戦！"
+      }
+
     </div>
 
     ${html}
-  `;
 
-  ui();
+  `;
 
   screenFX();
 }
 
-/* ================= 初期表示 ================= */
+/* ================= 初期 ================= */
 
 ui();
 
