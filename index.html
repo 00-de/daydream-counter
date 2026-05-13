@@ -89,10 +89,10 @@ input,textarea{
 
 .ach{
   margin-top:10px;
-  padding:10px;
+  padding:12px;
   border-radius:12px;
   background:#fff3cd;
-  line-height:1.7;
+  line-height:1.8;
 }
 
 .quizItem{
@@ -105,7 +105,7 @@ input,textarea{
 .quizQuestion{
   font-weight:bold;
   margin-bottom:10px;
-  line-height:1.7;
+  line-height:1.8;
 }
 
 .choiceBtn{
@@ -327,11 +327,12 @@ input,textarea{
 
 <script>
 
-/* ================= 保存 ================= */
+/* ================= 保存キー ================= */
 
 const KEY="ddd_counter_final";
 const PRAY="ddd_prayer_final";
 const QUIZ="ddd_quiz_final";
+const STAGE="ddd_stage_final";
 
 /* ================= DOM ================= */
 
@@ -369,6 +370,9 @@ JSON.parse(localStorage.getItem(KEY))||{
   done:false
 };
 
+let stage=
+JSON.parse(localStorage.getItem(STAGE))||{};
+
 let quizScore=
 JSON.parse(localStorage.getItem(QUIZ))||{
   best:0
@@ -380,6 +384,10 @@ bestScore.textContent=quizScore.best;
 
 function save(){
   localStorage.setItem(KEY,JSON.stringify(state));
+}
+
+function saveStage(){
+  localStorage.setItem(STAGE,JSON.stringify(stage));
 }
 
 function saveQuiz(){
@@ -476,6 +484,9 @@ function ui(){
 
   fill.style.width=p+"%";
 
+  checkDaily(c);
+  checkStage(c.total);
+
   save();
 }
 
@@ -519,34 +530,46 @@ function toggle(){
 function resetDay(){
 
   state.daily=0;
+  state.done=false;
+
   save();
+
   ui();
 }
 
 function resetMonth(){
 
   state.monthly=0;
+
   save();
+
   ui();
 }
 
 function resetTotal(){
 
   state.total=0;
+
+  stage={};
+
   save();
+  saveStage();
+
   ui();
 }
 
-/* ================= 演出 ================= */
+/* ================= 段階演出 ================= */
 
 function add(text){
 
-  let d=
-  document.createElement("div");
+  let d=document.createElement("div");
 
   d.className="ach";
 
-  d.innerHTML=text;
+  d.innerHTML=`
+    ${nowJST()}<br><br>
+    ${text}
+  `;
 
   ach.prepend(d);
 }
@@ -575,25 +598,174 @@ function createSpace(){
 
   space.innerHTML="";
 
-  for(let i=0;i<120;i++){
+  for(let i=0;i<150;i++){
 
-    let s=
-    document.createElement("div");
+    let s=document.createElement("div");
 
     s.className="star";
 
     s.style.left=
-    Math.random()*100+"%";
+      Math.random()*100+"%";
 
     s.style.top=
-    Math.random()*100+"%";
+      Math.random()*100+"%";
+
+    s.style.animationDuration=
+      (2+Math.random()*3)+"s";
 
     space.appendChild(s);
   }
 
+  document.body.classList.add("flash");
+
   setTimeout(()=>{
-    space.style.display="none";
+    endSpace();
   },8000);
+}
+
+function endSpace(){
+
+  space.style.display="none";
+
+  document.body.classList.remove("flash");
+}
+
+/* ================= 段階チェック ================= */
+
+function checkStage(totalValue){
+
+  if(totalValue>=10000 && !stage[10000]){
+
+    stage[10000]=true;
+
+    add(`
+      🥁 大地：スタートライン突破！<br>
+      「その積み重ね、最高だぜ！」
+    `);
+
+    screenFX();
+
+    saveStage();
+  }
+
+  if(totalValue>=50000 && !stage[50000]){
+
+    stage[50000]=true;
+
+    add(`
+      🎀 葵：すごい勢いだね！<br>
+      「このまま一緒に進もっ✨」
+    `);
+
+    screenFX();
+
+    saveStage();
+  }
+
+  if(totalValue>=100000 && !stage[100000]){
+
+    stage[100000]=true;
+
+    add(`
+      🎸 蓮：努力が形になってきた！<br>
+      「かなり強くなってるよ」
+    `);
+
+    screenFX();
+
+    saveStage();
+  }
+
+  if(totalValue>=200000 && !stage[200000]){
+
+    stage[200000]=true;
+
+    add(`
+      🎤 結衣：ここまで本当にすごい！<br>
+      「想い、ちゃんと届いてるよ✨」
+    `);
+
+    screenFX();
+
+    saveStage();
+  }
+
+  if(totalValue>=500000 && !stage[500000]){
+
+    stage[500000]=true;
+
+    add(`
+      🎹 悠真：半分到達！<br>
+      「積み上げた時間は絶対に力になる」
+    `);
+
+    screenFX();
+
+    saveStage();
+  }
+
+  if(totalValue>=700000 && !stage[700000]){
+
+    stage[700000]=true;
+
+    add(`
+      ✨ 美琴：あと少し…！<br>
+      「光が見えてきたね🌌」
+    `);
+
+    screenFX();
+
+    saveStage();
+  }
+
+  if(totalValue>=1000000 && !stage[1000000]){
+
+    stage[1000000]=true;
+
+    add(`
+      🏆 100万達成！！<br>
+      🌌 宇宙モード起動！！
+    `);
+
+    screenFX();
+
+    createSpace();
+
+    setTimeout(()=>{
+
+      add(`
+        🚀 DayDreamプラス覚醒完了<br>
+        「新しい世界へようこそ」
+      `);
+
+    },3000);
+
+    saveStage();
+  }
+}
+
+/* ================= 1日達成 ================= */
+
+function checkDaily(c){
+
+  let g=
+    Number(goal.value||1);
+
+  if(state.done) return;
+
+  if(c.daily>=g){
+
+    state.done=true;
+
+    save();
+
+    add(`
+      🌅 1日の目標達成！<br>
+      おめでとう！！
+    `);
+
+    screenFX();
+  }
 }
 
 /* ================= ページ切替 ================= */
@@ -750,8 +922,6 @@ function decodeHTML(str){
   return txt.value;
 }
 
-/* 翻訳 */
-
 async function translateText(text){
 
   try{
@@ -781,7 +951,7 @@ async function translateText(text){
   }
 }
 
-/* クイズ生成 */
+/* ================= クイズ生成 ================= */
 
 async function generateQuiz(){
 
@@ -865,7 +1035,6 @@ async function generateQuiz(){
 
         q:qJa,
         qOriginal:qOriginal,
-
         a:aJa,
 
         choices:
@@ -899,7 +1068,7 @@ async function generateQuiz(){
   }
 }
 
-/* クイズ描画 */
+/* ================= クイズ描画 ================= */
 
 function renderQuiz(){
 
@@ -951,7 +1120,7 @@ function renderQuiz(){
   });
 }
 
-/* 選択 */
+/* ================= 選択 ================= */
 
 function selectChoice(qi,ci){
 
@@ -982,7 +1151,7 @@ function selectChoice(qi,ci){
   }
 }
 
-/* 答え合わせ */
+/* ================= 答え合わせ ================= */
 
 function submitQuiz(){
 
