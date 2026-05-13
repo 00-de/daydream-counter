@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>題目カウンター DayDreamプラス DX+ 完全版</title>
+<title>題目カウンター DayDreamプラス DX+ 翻訳対応完全版</title>
 
 <style>
 body{
@@ -141,6 +141,14 @@ input,textarea{
   margin-bottom:6px;
 }
 
+.quizOriginal{
+  font-size:12px;
+  color:#777;
+  margin-top:6px;
+  line-height:1.5;
+  word-break:break-word;
+}
+
 .choiceBtn{
   display:block;
   width:100%;
@@ -194,6 +202,26 @@ input,textarea{
   font-size:12px;
   color:#555;
   margin-top:6px;
+}
+
+.translatedBadge{
+  display:inline-block;
+  padding:3px 8px;
+  border-radius:999px;
+  background:#e1f5fe;
+  color:#0277bd;
+  font-size:11px;
+  font-weight:bold;
+  margin-right:6px;
+}
+
+.originalToggle{
+  font-size:12px;
+  color:#1565c0;
+  cursor:pointer;
+  text-decoration:underline;
+  margin-top:4px;
+  display:inline-block;
 }
 </style>
 </head>
@@ -278,7 +306,7 @@ input,textarea{
 
     <div id="quizResult"></div>
     <div class="smallNote">
-      ※ 重複回避: Session Token + 履歴チェック + 同回出題内重複排除
+      ※ 重複回避: Session Token + 履歴チェック + 同回重複排除 + 翻訳キャッシュ
     </div>
   </div>
 </div>
@@ -313,10 +341,11 @@ const space = document.getElementById("space");
 /* ================= 永続キー ================= */
 const KEY = "dx_all_final_v3";
 const PRAY = "dx_pray_final_v3";
-const QUIZ_SCORE_KEY = "dx_quiz_score_v2";
-const QUIZ_TOKEN_KEY = "dx_quiz_token_v2";
-const QUIZ_TOKEN_TIME_KEY = "dx_quiz_token_time_v2";
-const QUIZ_HISTORY_KEY = "dx_quiz_history_v2";
+const QUIZ_SCORE_KEY = "dx_quiz_score_v3";
+const QUIZ_TOKEN_KEY = "dx_quiz_token_v3";
+const QUIZ_TOKEN_TIME_KEY = "dx_quiz_token_time_v3";
+const QUIZ_HISTORY_KEY = "dx_quiz_history_v3";
+const QUIZ_TRANSLATION_CACHE_KEY = "dx_quiz_translation_cache_v1";
 
 /* ================= 状態 ================= */
 let state = JSON.parse(localStorage.getItem(KEY)) || {
@@ -340,6 +369,8 @@ let quizScore = JSON.parse(localStorage.getItem(QUIZ_SCORE_KEY)) || {
 let quizToken = localStorage.getItem(QUIZ_TOKEN_KEY) || "";
 let quizTokenTime = Number(localStorage.getItem(QUIZ_TOKEN_TIME_KEY) || 0);
 
+let translationCache = loadTranslationCache();
+
 let quizData = [];
 let quizSelections = [];
 let quizAnswered = false;
@@ -349,10 +380,12 @@ let duplicateStats = {
   historySkipped: 0,
   currentSkipped: 0,
   fetchedTotal: 0,
+  translatedCount: 0,
   mode: "internet"
 };
 
-let lastApiCallAt = 0;
+let lastTriviaApiCallAt = 0;
+let lastTranslateCallAt = 0;
 
 /* ================= 保存 ================= */
 function save(){
@@ -366,6 +399,27 @@ function saveQuizScore(){
 function saveQuizToken(){
   localStorage.setItem(QUIZ_TOKEN_KEY, quizToken || "");
   localStorage.setItem(QUIZ_TOKEN_TIME_KEY, String(quizTokenTime || 0));
+}
+
+function loadTranslationCache(){
+  try{
+    const data = JSON.parse(localStorage.getItem(QUIZ_TRANSLATION_CACHE_KEY) || "{}");
+    return (data && typeof data === "object") ? data : {};
+  }catch(e){
+    return {};
+  }
+}
+
+function saveTranslationCache(){
+  try{
+    const keys = Object.keys(translationCache);
+    if(keys.length > 500){
+      const sliced = {};
+      keys.slice(-500).forEach(k => sliced[k] = translationCache[k]);
+      translationCache = sliced;
+    }
+    localStorage.setItem(QUIZ_TRANSLATION_CACHE_KEY, JSON.stringify(translationCache));
+  }catch(e){}
 }
 
 /* ================= 履歴 ================= */
@@ -397,7 +451,7 @@ function appendQuizHistory(signatures){
 }
 
 function resetQuizHistory(){
-  if(!confirm("重複履歴をリセットしますか？\n今後、過去に出た問題も再び出やすくなります。")){
+  if(!confirm("重複履歴をリセットしますか？\n過去に出た問題がまた出やすくなります。")){
     return;
   }
   localStorage.removeItem(QUIZ_HISTORY_KEY);
@@ -712,11 +766,11 @@ function renderQuizScore(){
 
 function renderQuizSource(){
   if(quizSource === "internet"){
-    quizSourceInfo.innerHTML = "🌐 出題元: インターネット取得（重複回避強化版）";
+    quizSourceInfo.innerHTML = "🌐 出題元: インターネット取得 + 日本語翻訳表示";
   }else if(quizSource === "mixed"){
     quizSourceInfo.innerHTML = "🌐＋🧩 出題元: インターネット中心 + 一部予備問題";
   }else{
-    quizSourceInfo.innerHTML = "⚠️ 出題元: ローカル予備問題のみ（通信失敗時）";
+    quizSourceInfo.innerHTML = "⚠️ 出題元: ローカル予備問題のみ";
   }
 }
 
@@ -726,7 +780,8 @@ function renderDuplicateInfo(){
     🔁 重複回避履歴: ${historyCount}件保存中<br>
     🚫 履歴で除外: ${duplicateStats.historySkipped}件<br>
     🚫 同回出題で除外: ${duplicateStats.currentSkipped}件<br>
-    📥 今回取得候補数: ${duplicateStats.fetchedTotal}件
+    📥 今回取得候補数: ${duplicateStats.fetchedTotal}件<br>
+    🌍 翻訳処理数: ${duplicateStats.translatedCount}件
   `;
 }
 
@@ -791,12 +846,12 @@ async function ensureQuizToken(forceNew=false){
   return requestNewToken();
 }
 
-async function waitForRateLimit(){
-  const needWait = 5200 - (Date.now() - lastApiCallAt);
+async function waitForTriviaRateLimit(){
+  const needWait = 5200 - (Date.now() - lastTriviaApiCallAt);
   if(needWait > 0){
     await sleep(needWait);
   }
-  lastApiCallAt = Date.now();
+  lastTriviaApiCallAt = Date.now();
 }
 
 async function fetchTriviaBatch(amount=10){
@@ -805,7 +860,7 @@ async function fetchTriviaBatch(amount=10){
   while(tries < 4){
     tries++;
     await ensureQuizToken(false);
-    await waitForRateLimit();
+    await waitForTriviaRateLimit();
 
     const url = `https://opentdb.com/api.php?amount=${amount}&type=multiple&encode=url3986&token=${quizToken}`;
     const res = await fetch(url);
@@ -838,6 +893,127 @@ async function fetchTriviaBatch(amount=10){
   throw new Error("trivia fetch failed");
 }
 
+/* ================= 翻訳 ================= */
+function shouldTranslate(text){
+  const t = String(text || "").trim();
+  if(!t) return false;
+  if(/[ぁ-んァ-ヶ一-龠々]/.test(t)) return false;
+  return /[A-Za-z]/.test(t);
+}
+
+function cacheKeyForTranslation(text){
+  return "en|ja|" + text;
+}
+
+function commonWordMap(text){
+  const map = {
+    "easy":"かんたん",
+    "medium":"ふつう",
+    "hard":"むずかしい",
+    "general knowledge":"一般常識",
+    "science & nature":"科学・自然",
+    "science and nature":"科学・自然",
+    "computers":"コンピューター",
+    "history":"歴史",
+    "sports":"スポーツ",
+    "geography":"地理",
+    "entertainment: books":"エンタメ：本",
+    "entertainment: film":"エンタメ：映画",
+    "entertainment: music":"エンタメ：音楽",
+    "entertainment: television":"エンタメ：テレビ",
+    "entertainment: video games":"エンタメ：ゲーム",
+    "politics":"政治",
+    "animals":"動物",
+    "mythology":"神話",
+    "art":"アート",
+    "celebrities":"有名人",
+    "vehicles":"乗り物"
+  };
+
+  const key = String(text || "").trim().toLowerCase();
+  return map[key] || null;
+}
+
+async function waitForTranslateRateLimit(){
+  const needWait = 300 - (Date.now() - lastTranslateCallAt);
+  if(needWait > 0){
+    await sleep(needWait);
+  }
+  lastTranslateCallAt = Date.now();
+}
+
+async function translateTextEnToJa(text){
+  const original = decodeText(String(text || "")).trim();
+  if(!original) return "";
+
+  const mapped = commonWordMap(original);
+  if(mapped) return mapped;
+
+  if(!shouldTranslate(original)) return original;
+
+  const key = cacheKeyForTranslation(original);
+  if(translationCache[key]){
+    return translationCache[key];
+  }
+
+  try{
+    await waitForTranslateRateLimit();
+
+    const safeText = original.slice(0, 450);
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(safeText)}&langpair=en|ja&mt=1`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    let translated = "";
+    if(data && data.responseData && data.responseData.translatedText){
+      translated = decodeText(data.responseData.translatedText).trim();
+    }
+
+    if(!translated){
+      translated = original;
+    }
+
+    translationCache[key] = translated;
+    saveTranslationCache();
+    return translated;
+  }catch(e){
+    return original;
+  }
+}
+
+async function translateQuizItems(items){
+  const uniqueTexts = new Set();
+
+  items.forEach(item=>{
+    uniqueTexts.add(item.q);
+    uniqueTexts.add(item.correct);
+    (item.choices || []).forEach(c => uniqueTexts.add(c));
+    if(item.category) uniqueTexts.add(item.category);
+    if(item.difficulty) uniqueTexts.add(item.difficulty);
+  });
+
+  const translateMap = {};
+  const targets = [...uniqueTexts].filter(t => shouldTranslate(t) || commonWordMap(t));
+
+  duplicateStats.translatedCount = targets.length;
+  renderDuplicateInfo();
+
+  for(const text of targets){
+    translateMap[text] = await translateTextEnToJa(text);
+  }
+
+  items.forEach(item=>{
+    item.qJa = translateMap[item.q] || item.q;
+    item.correctJa = translateMap[item.correct] || item.correct;
+    item.choicesJa = item.choices.map(c => translateMap[c] || c);
+    item.categoryJa = translateMap[item.category] || item.category;
+    item.difficultyJa = translateMap[item.difficulty] || item.difficulty;
+  });
+
+  return items;
+}
+
+/* ================= 問題変換 ================= */
 function convertTriviaItem(item){
   const question = decodeText(item.question);
   const correct = decodeText(item.correct_answer);
@@ -851,7 +1027,12 @@ function convertTriviaItem(item){
     category: decodeText(item.category || ""),
     difficulty: decodeText(item.difficulty || ""),
     signature: makeSignature(question, correct),
-    from: "internet"
+    from: "internet",
+    qJa: question,
+    correctJa: correct,
+    choicesJa: [...choices],
+    categoryJa: decodeText(item.category || ""),
+    difficultyJa: decodeText(item.difficulty || "")
   };
 }
 
@@ -894,7 +1075,12 @@ function generateFallbackQuiz(count, currentSet, historySet){
       category:"Fallback",
       difficulty:"easy",
       signature,
-      from:"local"
+      from:"local",
+      qJa:item.q,
+      correctJa:item.correct,
+      choicesJa:shuffle(item.choices),
+      categoryJa:"予備問題",
+      difficultyJa:"かんたん"
     };
   });
 
@@ -932,6 +1118,7 @@ async function buildUniqueInternetQuiz(targetCount=5){
     historySkipped: 0,
     currentSkipped: 0,
     fetchedTotal: 0,
+    translatedCount: 0,
     mode: "internet"
   };
 
@@ -996,6 +1183,7 @@ async function buildUniqueInternetQuiz(targetCount=5){
   return { questions: selected.slice(0, targetCount), mode };
 }
 
+/* ================= クイズ生成 ================= */
 async function generateQuiz(){
   if(quizLoading) return;
 
@@ -1003,15 +1191,17 @@ async function generateQuiz(){
   quizSelections = [null, null, null, null, null];
   quizAnswered = false;
   quizResult.innerHTML = "";
-
   renderQuizScore();
   renderDuplicateInfo();
-  setQuizLoading("🌐 インターネットから重複の少ない問題を取得中...");
+  setQuizLoading("🌐 インターネットから問題を取得中...");
 
   try{
     const result = await buildUniqueInternetQuiz(5);
     quizData = result.questions;
     quizSource = result.mode;
+
+    setQuizLoading("🌍 英語問題を日本語に変換中...");
+    await translateQuizItems(quizData);
   }catch(e){
     const currentSet = new Set();
     const historySet = new Set(loadQuizHistory().slice(-200));
@@ -1019,12 +1209,20 @@ async function generateQuiz(){
     appendQuizHistory(quizData.map(x => x.signature));
     quizSource = "local";
     duplicateStats.mode = "local";
+    duplicateStats.translatedCount = 0;
   }
 
   quizLoading = false;
   renderQuizSource();
   renderDuplicateInfo();
   renderQuiz();
+}
+
+/* ================= 表示 ================= */
+function toggleOriginal(index){
+  const box = document.getElementById("originalBox" + index);
+  if(!box) return;
+  box.style.display = (box.style.display === "none") ? "block" : "none";
 }
 
 function renderQuiz(){
@@ -1035,8 +1233,8 @@ function renderQuiz(){
     div.className = "quizItem";
 
     let meta = "";
-    if(item.category || item.difficulty){
-      meta = `<div class="quizMeta">分類: ${item.category || "-"} / 難易度: ${item.difficulty || "-"}</div>`;
+    if(item.categoryJa || item.difficultyJa){
+      meta = `<div class="quizMeta"><span class="translatedBadge">日本語表示</span>分類: ${item.categoryJa || "-"} / 難易度: ${item.difficultyJa || "-"}</div>`;
     }
 
     let choicesHtml = item.choices.map((choice, idx)=>{
@@ -1054,17 +1252,25 @@ function renderQuiz(){
         }
       }
 
+      const jaText = item.choicesJa[idx] || choice;
+
       return `
         <button class="${cls}" onclick="selectChoice(${i}, ${idx})" ${quizAnswered ? "disabled" : ""}>
-          ${idx+1}. ${choice}
+          ${idx+1}. ${jaText}
         </button>
       `;
     }).join("");
 
     div.innerHTML = `
       ${meta}
-      <div class="quizQuestion">Q${i+1}. ${item.q}</div>
+      <div class="quizQuestion">Q${i+1}. ${item.qJa || item.q}</div>
       ${choicesHtml}
+      <div class="originalToggle" onclick="toggleOriginal(${i})">英語原文を表示 / 非表示</div>
+      <div id="originalBox${i}" class="quizOriginal" style="display:none;">
+        <b>Question:</b> ${item.q}<br>
+        <b>Choices:</b><br>
+        ${item.choices.map((c, idx) => `${idx+1}. ${c}`).join("<br>")}
+      </div>
     `;
 
     quizList.appendChild(div);
@@ -1088,17 +1294,18 @@ function submitQuiz(){
     let selectedIndex = quizSelections[i];
 
     if(selectedIndex === null){
-      html += `<div class="ach">⚪ Q${i+1} 未回答　正解: ${q.correct}</div>`;
+      html += `<div class="ach">⚪ Q${i+1} 未回答　正解: ${q.correctJa || q.correct}</div>`;
       return;
     }
 
     let selectedValue = q.choices[selectedIndex];
+    let selectedValueJa = q.choicesJa[selectedIndex] || selectedValue;
 
     if(selectedValue === q.correct){
       score++;
       html += `<div class="ach">✅ Q${i+1} 正解</div>`;
     }else{
-      html += `<div class="ach">❌ Q${i+1} 不正解　あなたの答え: ${selectedValue}　正解: ${q.correct}</div>`;
+      html += `<div class="ach">❌ Q${i+1} 不正解　あなたの答え: ${selectedValueJa}　正解: ${q.correctJa || q.correct}</div>`;
     }
   });
 
