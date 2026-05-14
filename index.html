@@ -824,7 +824,6 @@ const STAGE="ddd_stage_final";
 const ACHLOG="ddd_achlog_final";
 const VIEW_MODE_KEY="ddd_view_mode_final";
 const QUIZ_CATEGORY_KEY="ddd_quiz_category_final";
-const INSTALL_TIP_CLOSED_KEY="ddd_install_tip_closed_final";
 
 const DB_NAME="daydream_plus_dx_db";
 const DB_VERSION=1;
@@ -1501,15 +1500,22 @@ function renderAchievements(){
 
   ach.innerHTML="";
 
-  achLog.forEach(item=>{
+  achLog.forEach((item,index)=>{
     let d=document.createElement("div");
     d.className="ach";
     d.innerHTML=`
       ${item.date}<br><br>
-      ${item.text}
+      ${item.text}<br><br>
+      <button class="resetBtn" onclick="deleteAchievement(${index})">削除</button>
     `;
     ach.appendChild(d);
   });
+}
+
+function deleteAchievement(index){
+  achLog.splice(index,1);
+  saveAchLog();
+  renderAchievements();
 }
 
 function add(text){
