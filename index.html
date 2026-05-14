@@ -64,7 +64,12 @@ button{
   color:white;
 }
 
-input,textarea{
+.backupBtn{
+  background:#3949ab;
+  color:white;
+}
+
+input,textarea,select{
   width:100%;
   box-sizing:border-box;
   padding:10px;
@@ -147,6 +152,12 @@ input,textarea{
   50%{transform:translate(-2px,-1px);}
   75%{transform:translate(1px,-2px);}
   100%{transform:translate(0,0);}
+}
+
+.storageInfo{
+  font-size:13px;
+  line-height:1.8;
+  color:#333;
 }
 
 /* ================= クイズDX+ ================= */
@@ -311,6 +322,13 @@ input,textarea{
   padding-bottom:40px;
 }
 
+.originalText{
+  font-size:12px;
+  opacity:0.75;
+  margin-top:10px;
+  line-height:1.6;
+}
+
 </style>
 </head>
 
@@ -353,6 +371,20 @@ input,textarea{
 
     <div class="bar">
       <div class="fill" id="fill"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>💾 記録保護</h3>
+
+    <button class="backupBtn" onclick="exportBackup()">バックアップ保存</button>
+    <button class="backupBtn" onclick="triggerImportBackup()">バックアップ復元</button>
+    <input id="backupFile" type="file" accept=".json,application/json" style="display:none" onchange="importBackup(event)">
+
+    <div class="storageInfo">
+      ・記録は localStorage と IndexedDB に二重保存<br>
+      ・同じブラウザ / 同じURL系統なら、再起動やコード更新後も残りやすいです<br>
+      ・端末変更やブラウザ削除に備えて、たまにバックアップ保存しておくと安心です
     </div>
   </div>
 
@@ -465,6 +497,34 @@ input,textarea{
 const KEY="ddd_counter_final";
 const PRAY="ddd_prayer_final";
 const STAGE="ddd_stage_final";
+const ACHLOG="ddd_achlog_final";
+
+const DB_NAME="daydream_plus_dx_db";
+const DB_VERSION=1;
+const DB_STORE="app_store";
+
+/* ================= 初期データ ================= */
+
+const DEFAULT_STATE={
+  daily:0,
+  monthly:0,
+  total:0,
+  start:0,
+  fixedStart:0,
+  running:false,
+  per:60,
+  goal:3000,
+  done:false
+};
+
+const DEFAULT_STAGE={};
+
+const DEFAULT_QUIZ={
+  score:0,
+  combo:0,
+  count:0,
+  best:0
+};
 
 /* ================= DOM ================= */
 
@@ -488,34 +548,209 @@ const bestScore=document.getElementById("bestScore");
 
 /* ================= 状態 ================= */
 
-let state=
-JSON.parse(localStorage.getItem(KEY))||{
-  daily:0,
-  monthly:0,
-  total:0,
-  start:0,
-  fixedStart:0,
-  running:false,
-  per:60,
-  done:false
-};
+let state={...DEFAULT_STATE};
+let stage={...DEFAULT_STAGE};
+let achLog=[];
 
-let stage=
-JSON.parse(localStorage.getItem(STAGE))||{};
+let currentAnswer="";
+let score=0;
+let combo=0;
+let count=0;
+let quizBest=0;
 
-let quizBest=
-Number(localStorage.getItem("quizBest")) || 0;
+const translateCache={};
 
-bestScore.textContent=quizBest;
+/* ================= 共通ユーティリティ ================= */
+
+function safeJSONParse(text,fallback){
+  try{
+    return text ? JSON.parse(text) : fallback;
+  }catch(e){
+    return fallback;
+  }
+}
+
+function normalizeState(data){
+  return {
+    ...DEFAULT_STATE,
+    ...(data||{})
+  };
+}
+
+function normalizeQuiz(data){
+  return {
+    ...DEFAULT_QUIZ,
+    ...(data||{})
+  };
+}
+
+function isJapaneseText(text){
+  return /[ぁ-んァ-ン一-龥]/.test(text || "");
+}
+
+/* ================= IndexedDB ================= */
+
+function openDB(){
+  return new Promise((resolve,reject)=>{
+
+    if(!window.indexedDB){
+      reject(new Error("IndexedDB not supported"));
+      return;
+    }
+
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+
+    req.onupgradeneeded=function(){
+      const db=req.result;
+      if(!db.objectStoreNames.contains(DB_STORE)){
+        db.createObjectStore(DB_STORE);
+      }
+    };
+
+    req.onsuccess=function(){
+      resolve(req.result);
+    };
+
+    req.onerror=function(){
+      reject(req.error);
+    };
+
+  });
+}
+
+async function idbGet(key){
+  try{
+    const db=await openDB();
+
+    return await new Promise((resolve,reject)=>{
+      const tx=db.transaction(DB_STORE,"readonly");
+      const store=tx.objectStore(DB_STORE);
+      const req=store.get(key);
+
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error);
+    });
+
+  }catch(e){
+    return null;
+  }
+}
+
+async function idbSet(key,value){
+  try{
+    const db=await openDB();
+
+    return await new Promise((resolve,reject)=>{
+      const tx=db.transaction(DB_STORE,"readwrite");
+      const store=tx.objectStore(DB_STORE);
+      const req=store.put(value,key);
+
+      req.onsuccess=()=>resolve(true);
+      req.onerror=()=>reject(req.error);
+    });
+
+  }catch(e){
+    return false;
+  }
+}
+
+/* ================= ローカル保存取得 ================= */
+
+function getLocalState(){
+  return normalizeState(
+    safeJSONParse(localStorage.getItem(KEY),DEFAULT_STATE)
+  );
+}
+
+function getLocalStage(){
+  return safeJSONParse(localStorage.getItem(STAGE),DEFAULT_STAGE) || {};
+}
+
+function getLocalPrayerList(){
+  return safeJSONParse(localStorage.getItem(PRAY),[]) || [];
+}
+
+function getLocalAchLog(){
+  return safeJSONParse(localStorage.getItem(ACHLOG),[]) || [];
+}
+
+function getLocalQuiz(){
+  return normalizeQuiz({
+    score:Number(localStorage.getItem("quizScore")) || 0,
+    combo:Number(localStorage.getItem("quizCombo")) || 0,
+    count:Number(localStorage.getItem("quizCount")) || 0,
+    best:Number(localStorage.getItem("quizBest")) || 0
+  });
+}
 
 /* ================= 保存 ================= */
 
 function save(){
   localStorage.setItem(KEY,JSON.stringify(state));
+  idbSet("state",state);
 }
 
 function saveStage(){
   localStorage.setItem(STAGE,JSON.stringify(stage));
+  idbSet("stage",stage);
+}
+
+function savePrayerList(list){
+  localStorage.setItem(PRAY,JSON.stringify(list));
+  idbSet("prayer",list);
+}
+
+function saveAchLog(){
+  localStorage.setItem(ACHLOG,JSON.stringify(achLog));
+  idbSet("achlog",achLog);
+}
+
+function saveQuizData(){
+  localStorage.setItem("quizScore",score);
+  localStorage.setItem("quizCombo",combo);
+  localStorage.setItem("quizCount",count);
+  localStorage.setItem("quizBest",quizBest);
+
+  idbSet("quiz",{
+    score:score,
+    combo:combo,
+    count:count,
+    best:quizBest
+  });
+}
+
+/* ================= 起動時ロード ================= */
+
+async function loadAllSavedData(){
+
+  const rawIdbState=await idbGet("state");
+  const rawIdbStage=await idbGet("stage");
+  const rawIdbPrayer=await idbGet("prayer");
+  const rawIdbAchLog=await idbGet("achlog");
+  const rawIdbQuiz=await idbGet("quiz");
+
+  state=rawIdbState ? normalizeState(rawIdbState) : getLocalState();
+  stage=rawIdbStage || getLocalStage();
+  achLog=Array.isArray(rawIdbAchLog) ? rawIdbAchLog : getLocalAchLog();
+
+  const quizData=rawIdbQuiz ? normalizeQuiz(rawIdbQuiz) : getLocalQuiz();
+  score=quizData.score;
+  combo=quizData.combo;
+  count=quizData.count;
+  quizBest=quizData.best;
+
+  if(!rawIdbState) idbSet("state",state);
+  if(!rawIdbStage) idbSet("stage",stage);
+  if(!rawIdbPrayer) idbSet("prayer",getLocalPrayerList());
+  if(!rawIdbAchLog) idbSet("achlog",achLog);
+  if(!rawIdbQuiz) idbSet("quiz",quizData);
+
+  per.value=state.per || 60;
+  goal.value=state.goal || 3000;
+
+  renderAchievements();
+  updateQuizUI();
+  ui();
 }
 
 /* ================= JST ================= */
@@ -536,9 +771,6 @@ function updateClock(){
   ui();
 }
 
-setInterval(updateClock,1000);
-updateClock();
-
 /* ================= カウント ================= */
 
 function get(){
@@ -547,13 +779,11 @@ function get(){
     return state;
   }
 
-  let sec=
-  (Date.now()-state.start)/1000;
-
-  let add=
-  sec*(state.per/60);
+  let sec=(Date.now()-state.start)/1000;
+  let add=sec*(state.per/60);
 
   return{
+    ...state,
     daily:state.daily+add,
     monthly:state.monthly+add,
     total:state.total+add
@@ -571,31 +801,22 @@ function ui(){
   total.textContent=Math.floor(c.total);
 
   if(state.fixedStart){
-
     startTime.textContent=
-    new Date(state.fixedStart)
-    .toLocaleString(
+    new Date(state.fixedStart).toLocaleString(
       "ja-JP",
       {
         timeZone:"Asia/Tokyo"
       }
     );
-
   }else{
-
     startTime.textContent="未開始";
   }
 
-  btn.textContent=
-  state.running
-  ? "⏹停止"
-  : "▶開始";
+  btn.textContent=state.running ? "⏹停止" : "▶開始";
 
-  let g=
-  Number(goal.value||1);
+  let g=Number(goal.value || state.goal || 1);
 
-  let p=
-  Math.min(
+  let p=Math.min(
     100,
     Math.floor((c.daily/g)*100)
   );
@@ -607,16 +828,39 @@ function ui(){
 
   checkDaily(c);
   checkStage(c.total);
+}
 
+/* ================= 設定保存 ================= */
+
+function updatePerSetting(){
+
+  const newPer=Number(per.value || 60);
+
+  if(state.running){
+    const c=get();
+    state.daily=c.daily;
+    state.monthly=c.monthly;
+    state.total=c.total;
+    state.start=Date.now();
+  }
+
+  state.per=newPer;
   save();
+  ui();
+}
+
+function updateGoalSetting(){
+  state.goal=Number(goal.value || 3000);
+  save();
+  ui();
 }
 
 /* ================= 開始停止 ================= */
 
 function toggle(){
 
-  state.per=
-  Number(per.value||60);
+  state.per=Number(per.value || 60);
+  state.goal=Number(goal.value || 3000);
 
   if(!state.running){
 
@@ -624,8 +868,6 @@ function toggle(){
 
     state.running=true;
     state.start=now;
-
-    /* 開始するたびに開始時刻を更新 */
     state.fixedStart=now;
 
   }else{
@@ -650,7 +892,6 @@ function resetDay(){
   state.daily=0;
   state.done=false;
 
-  /* 日リセット時に開始時刻も未開始へ戻す */
   state.start=0;
   state.fixedStart=0;
   state.running=false;
@@ -675,18 +916,32 @@ function resetTotal(){
 
 /* ================= 段階演出 ================= */
 
+function renderAchievements(){
+
+  ach.innerHTML="";
+
+  achLog.forEach(item=>{
+    let d=document.createElement("div");
+
+    d.className="ach";
+    d.innerHTML=`
+      ${item.date}<br><br>
+      ${item.text}
+    `;
+
+    ach.appendChild(d);
+  });
+}
+
 function add(text){
 
-  let d=document.createElement("div");
+  achLog.unshift({
+    date:nowJST(),
+    text:text
+  });
 
-  d.className="ach";
-
-  d.innerHTML=`
-    ${nowJST()}<br><br>
-    ${text}
-  `;
-
-  ach.prepend(d);
+  saveAchLog();
+  renderAchievements();
 }
 
 function screenFX(){
@@ -845,15 +1100,13 @@ function checkStage(totalValue){
 
 function checkDaily(c){
 
-  let g=
-  Number(goal.value||1);
+  let g=Number(goal.value || state.goal || 1);
 
   if(state.done) return;
 
   if(c.daily>=g){
 
     state.done=true;
-
     save();
 
     add(`
@@ -896,10 +1149,7 @@ function savePrayer(){
 
   if(!prayer.value.trim()) return;
 
-  let list=
-  JSON.parse(
-    localStorage.getItem(PRAY)||"[]"
-  );
+  let list=getLocalPrayerList();
 
   list.unshift({
     text:prayer.value,
@@ -907,29 +1157,21 @@ function savePrayer(){
     ok:false
   });
 
-  localStorage.setItem(
-    PRAY,
-    JSON.stringify(list)
-  );
+  savePrayerList(list);
 
   prayer.value="";
-
   renderPrayer();
 }
 
 function renderPrayer(){
 
-  let list=
-  JSON.parse(
-    localStorage.getItem(PRAY)||"[]"
-  );
+  let list=getLocalPrayerList();
 
   prayerList.innerHTML="";
 
   list.forEach((x,i)=>{
 
-    let d=
-    document.createElement("div");
+    let d=document.createElement("div");
 
     d.className="ach";
 
@@ -938,7 +1180,7 @@ function renderPrayer(){
       🙏 ${x.text}<br><br>
 
       <button onclick="toggleOk(${i})">
-        ${x.ok?"⭕達成":"⭕未達成"}
+        ${x.ok ? "⭕達成" : "⭕未達成"}
       </button>
 
       <button onclick="delPrayer(${i})">
@@ -947,50 +1189,121 @@ function renderPrayer(){
     `;
 
     prayerList.appendChild(d);
-
   });
 }
 
 function toggleOk(i){
 
-  let list=
-  JSON.parse(
-    localStorage.getItem(PRAY)||"[]"
-  );
+  let list=getLocalPrayerList();
 
   list[i].ok=!list[i].ok;
 
-  localStorage.setItem(
-    PRAY,
-    JSON.stringify(list)
-  );
-
+  savePrayerList(list);
   renderPrayer();
 }
 
 function delPrayer(i){
 
-  let list=
-  JSON.parse(
-    localStorage.getItem(PRAY)||"[]"
-  );
+  let list=getLocalPrayerList();
 
   list.splice(i,1);
 
-  localStorage.setItem(
-    PRAY,
-    JSON.stringify(list)
-  );
-
+  savePrayerList(list);
   renderPrayer();
 }
 
-/* ================= クイズDX+ ================= */
+/* ================= バックアップ ================= */
 
-let currentAnswer = "";
-let score = Number(localStorage.getItem("quizScore")) || 0;
-let combo = Number(localStorage.getItem("quizCombo")) || 0;
-let count = Number(localStorage.getItem("quizCount")) || 0;
+function exportBackup(){
+
+  const backupData={
+    app:"DayDreamPlusDX",
+    version:2,
+    exportedAt:nowJST(),
+    state:state,
+    stage:stage,
+    prayer:getLocalPrayerList(),
+    achLog:achLog,
+    quiz:{
+      score:score,
+      combo:combo,
+      count:count,
+      best:quizBest
+    }
+  };
+
+  const blob=new Blob(
+    [JSON.stringify(backupData,null,2)],
+    {type:"application/json"}
+  );
+
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,"-");
+
+  a.href=url;
+  a.download=`daydream_backup_${stamp}.json`;
+  a.click();
+
+  setTimeout(()=>{
+    URL.revokeObjectURL(url);
+  },1000);
+
+  add("💾 バックアップ保存完了");
+}
+
+function triggerImportBackup(){
+  document.getElementById("backupFile").click();
+}
+
+async function importBackup(event){
+
+  const file=event.target.files[0];
+  if(!file) return;
+
+  try{
+
+    const text=await file.text();
+    const data=JSON.parse(text);
+
+    state=normalizeState(data.state);
+    stage=data.stage || {};
+    achLog=Array.isArray(data.achLog) ? data.achLog : [];
+    const prayerData=Array.isArray(data.prayer) ? data.prayer : [];
+    const quizData=normalizeQuiz(data.quiz);
+
+    score=quizData.score;
+    combo=quizData.combo;
+    count=quizData.count;
+    quizBest=quizData.best;
+
+    per.value=state.per || 60;
+    goal.value=state.goal || 3000;
+
+    save();
+    saveStage();
+    savePrayerList(prayerData);
+    saveAchLog();
+    saveQuizData();
+
+    renderAchievements();
+    renderPrayer();
+    updateQuizUI();
+    ui();
+
+    add("📂 バックアップ復元完了");
+
+  }catch(e){
+
+    alert("バックアップ読込に失敗しました");
+
+  }finally{
+
+    event.target.value="";
+  }
+}
+
+/* ================= クイズDX+ ================= */
 
 const japanQuiz = [
 
@@ -1035,9 +1348,7 @@ answer:"信濃川"
 function shuffle(array){
 
   for(let i=array.length-1;i>0;i--){
-
     const j=Math.floor(Math.random()*(i+1));
-
     [array[i],array[j]]=[array[j],array[i]];
   }
 
@@ -1045,10 +1356,47 @@ function shuffle(array){
 }
 
 function decodeHTML(html){
-
   const txt=document.createElement("textarea");
   txt.innerHTML=html;
   return txt.value;
+}
+
+async function translateText(text){
+
+  if(!text) return text;
+
+  if(isJapaneseText(text)){
+    return text;
+  }
+
+  if(translateCache[text]){
+    return translateCache[text];
+  }
+
+  try{
+
+    const url=
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|ja`;
+
+    const res=await fetch(url);
+    const data=await res.json();
+
+    if(
+      data &&
+      data.responseData &&
+      data.responseData.translatedText
+    ){
+      const translated=data.responseData.translatedText;
+      translateCache[text]=translated;
+      return translated;
+    }
+
+    return text;
+
+  }catch(e){
+
+    return text;
+  }
 }
 
 function updateQuizUI(){
@@ -1064,14 +1412,6 @@ function updateQuizUI(){
   bestScore.textContent=quizBest;
 }
 
-function saveQuizData(){
-
-  localStorage.setItem("quizScore",score);
-  localStorage.setItem("quizCombo",combo);
-  localStorage.setItem("quizCount",count);
-  localStorage.setItem("quizBest",quizBest);
-}
-
 async function loadQuiz(){
 
   const questionEl=document.getElementById("question");
@@ -1083,51 +1423,64 @@ async function loadQuiz(){
   if(infoEl) infoEl.innerText="";
   if(questionEl) questionEl.innerHTML="クイズ読み込み中...";
 
-  const category =
-  categoryEl ? categoryEl.value : "";
+  const category=categoryEl ? categoryEl.value : "";
 
   try{
 
-    let quiz;
-
     if(Math.random() < 0.5){
 
-      quiz = japanQuiz[
+      const quiz=japanQuiz[
         Math.floor(Math.random()*japanQuiz.length)
       ];
 
       showJapanQuiz(quiz);
-
-    }else{
-
-      const url = category
-        ? `https://opentdb.com/api.php?amount=1&type=multiple&category=${category}`
-        : `https://opentdb.com/api.php?amount=1&type=multiple`;
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if(!data || !data.results || !data.results[0]){
-        throw new Error("quiz data empty");
-      }
-
-      const q = data.results[0];
-
-      const choices = [
-        ...q.incorrect_answers,
-        q.correct_answer
-      ];
-
-      shuffle(choices);
-
-      quiz = {
-        question:q.question,
-        choices:choices,
-        answer:q.correct_answer
-      };
-
-      showWorldQuiz(quiz);
+      return;
     }
+
+    const url=category
+      ? `https://opentdb.com/api.php?amount=1&type=multiple&category=${category}`
+      : `https://opentdb.com/api.php?amount=1&type=multiple`;
+
+    const res=await fetch(url);
+    const data=await res.json();
+
+    if(!data || !data.results || !data.results[0]){
+      throw new Error("quiz data empty");
+    }
+
+    const q=data.results[0];
+
+    const originalQuestion=decodeHTML(q.question);
+    const originalCorrect=decodeHTML(q.correct_answer);
+    const originalIncorrect=q.incorrect_answers.map(x=>decodeHTML(x));
+
+    const translatedQuestion=await translateText(originalQuestion);
+    const translatedCorrect=await translateText(originalCorrect);
+
+    const translatedIncorrect=[];
+    for(const item of originalIncorrect){
+      translatedIncorrect.push(await translateText(item));
+    }
+
+    const choices=shuffle([
+      {
+        label:translatedCorrect,
+        isCorrect:true
+      },
+      ...translatedIncorrect.map(x=>({
+        label:x,
+        isCorrect:false
+      }))
+    ]);
+
+    const quiz={
+      question:translatedQuestion,
+      originalQuestion:originalQuestion,
+      choices:choices.map(x=>x.label),
+      answer:translatedCorrect
+    };
+
+    showWorldQuiz(quiz);
 
   }catch(e){
 
@@ -1144,13 +1497,15 @@ function showWorldQuiz(quiz){
   const questionEl=document.getElementById("question");
 
   if(questionEl){
-    questionEl.innerHTML=
-    "🌍 "+decodeHTML(quiz.question);
+    questionEl.innerHTML=`
+      🌍 ${quiz.question}
+      <div class="originalText">原文: ${quiz.originalQuestion || ""}</div>
+    `;
   }
 
   createChoices(
-    quiz.choices.map(c=>decodeHTML(c)),
-    decodeHTML(quiz.answer)
+    quiz.choices,
+    quiz.answer
   );
 }
 
@@ -1159,8 +1514,7 @@ function showJapanQuiz(quiz){
   const questionEl=document.getElementById("question");
 
   if(questionEl){
-    questionEl.innerHTML=
-    "🇯🇵 "+quiz.question;
+    questionEl.innerHTML=`🇯🇵 ${quiz.question}`;
   }
 
   createChoices(
@@ -1173,9 +1527,7 @@ function createChoices(choices,answer){
 
   currentAnswer=answer;
 
-  const choicesDiv=
-  document.getElementById("choices");
-
+  const choicesDiv=document.getElementById("choices");
   if(!choicesDiv) return;
 
   choicesDiv.innerHTML="";
@@ -1189,15 +1541,12 @@ function createChoices(choices,answer){
     btn.onclick=()=>checkAnswer(btn,choice);
 
     choicesDiv.appendChild(btn);
-
   });
 }
 
 function checkAnswer(button,choice){
 
-  const buttons=
-  document.querySelectorAll(".choice");
-
+  const buttons=document.querySelectorAll(".choice");
   const resultEl=document.getElementById("result");
   const infoEl=document.getElementById("info");
   const quizDxCard=document.getElementById("quizDxCard");
@@ -1259,11 +1608,9 @@ function checkAnswer(button,choice){
     }
 
     buttons.forEach(btn=>{
-
       if(btn.innerText===currentAnswer){
         btn.classList.add("correct");
       }
-
     });
   }
 
@@ -1276,10 +1623,30 @@ function generateQuiz(){
   loadQuiz();
 }
 
-/* ================= 初期 ================= */
+/* ================= イベント ================= */
 
-updateQuizUI();
-ui();
+per.addEventListener("change",updatePerSetting);
+goal.addEventListener("change",updateGoalSetting);
+
+window.addEventListener("beforeunload",()=>{
+  save();
+  saveStage();
+  saveAchLog();
+  saveQuizData();
+  savePrayerList(getLocalPrayerList());
+});
+
+/* ================= 初期化 ================= */
+
+async function init(){
+  await loadAllSavedData();
+  renderPrayer();
+  updateQuizUI();
+  updateClock();
+  setInterval(updateClock,1000);
+}
+
+init();
 
 </script>
 
